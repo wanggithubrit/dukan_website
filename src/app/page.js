@@ -10,12 +10,12 @@ import { ShopCardSkeleton } from '@/components/Skeletons';
 import {
   MapPin, Search, Clock, Store, ChevronDown, Heart,
   LayoutGrid, X, Package, ArrowRight, Navigation, Award,
-  AlertCircle, Loader2, Building2, Smartphone, Download, Menu
+  AlertCircle, Loader2, Building2
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import heroIllustration from '../../public/hero-illustration.png';
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 6;
 const RANGES = [1, 5, 10, 25, 'All'];
 const PREMIUM_PLANS = ['Pro', 'Business', 'Premium', 'pro', 'business', 'premium'];
 const LOC_STORAGE_KEY = 'dukand_coords';
@@ -227,45 +227,43 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
           animation: 'searchIn 0.25s cubic-bezier(0.16,1,0.3,1)',
         }}
       >
-        {/* ── Search input ── (sticky on small screens to keep visible with keyboard) */}
-        <div className="px-4 pt-3 pb-0 bg-white" style={{ paddingTop: 'env(safe-area-inset-top, 12px)' }}>
-          <div className="sticky top-0 bg-white z-30 py-2">
-            <div className="flex items-center gap-2.5">
-              <div
-                className="flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border-[1.5px] bg-white border-[#C8E8D6] transition-all duration-150 focus-within:border-[#0A5C43] focus-within:shadow-sm"
-                style={{ '--tw-shadow': '0 0 0 3px rgba(10,92,67,0.06)' }}
-              >
-                <Search className="w-4 h-4 text-[#0A5C43] shrink-0" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => onSubmit(e.target.value)}
-                  placeholder="Search shops, products, categories…"
-                  className="flex-1 bg-transparent text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none"
-                  style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif'" }}
-                />
-                {query && (
-                  <button onClick={() => onSubmit('')} className="text-slate-400 hover:text-slate-600 transition shrink-0">
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={onClose}
-                className="w-11 h-11 rounded-xl border-[1.5px] border-[#E0EDE5] bg-[#F8FBF9] hover:bg-[#E8F5EE] flex items-center justify-center shrink-0 transition text-[#6B8E7E]"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        {/* ── Search input ── */}
+        <div className="px-4 pt-4 pb-0 bg-white">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="flex-1 flex items-center gap-2.5 px-3.5 py-3 rounded-xl border-[1.5px] bg-[#F3FAF6] border-[#C8E8D6] transition-all duration-150 focus-within:border-[#0A5C43] focus-within:bg-white focus-within:shadow-sm"
+              style={{ '--tw-shadow': '0 0 0 3px rgba(10,92,67,0.08)' }}
+            >
+              <Search className="w-4 h-4 text-[#0A5C43] shrink-0" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => onSubmit(e.target.value)}
+                placeholder="Search shops, products, categories…"
+                className="flex-1 bg-transparent text-sm font-medium text-slate-800 placeholder-[#9DB5A8] focus:outline-none"
+                style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
+              />
+              {query && (
+                <button onClick={() => onSubmit('')} className="text-slate-400 hover:text-slate-600 transition shrink-0">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-
-            {/* Result count (kept near input) */}
-            <p className="text-[11px] text-slate-400 mt-2.5 px-1 font-medium">
-              {query.trim()
-                ? (hasResults ? `${filteredShops.length} shop${filteredShops.length !== 1 ? 's' : ''} · ${productResults.length} product${productResults.length !== 1 ? 's' : ''}` : 'No results found')
-                : 'Start typing to search shops and products'}
-            </p>
+            <button
+              onClick={onClose}
+              className="w-11 h-11 rounded-xl border-[1.5px] border-[#E0EDE5] bg-[#F8FBF9] hover:bg-[#E8F5EE] flex items-center justify-center shrink-0 transition text-[#6B8E7E]"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
+
+          {/* Result count */}
+          <p className="text-[11px] text-slate-400 mt-2.5 px-1 font-medium">
+            {query.trim()
+              ? (hasResults ? `${filteredShops.length} shop${filteredShops.length !== 1 ? 's' : ''} · ${productResults.length} product${productResults.length !== 1 ? 's' : ''}` : 'No results found')
+              : 'Start typing to search shops and products'}
+          </p>
 
           {/* ── Tabs ── */}
           <div className="flex gap-1 mt-3">
@@ -383,7 +381,6 @@ function EmptyState({ icon: Icon, title, subtitle }) {
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function HomeDashboard() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -468,24 +465,10 @@ export default function HomeDashboard() {
       <header className="sticky top-0 z-50 bg-white border-b border-[#E2EFE8]" style={{ boxShadow: '0 1px 3px rgba(10,92,67,0.06)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
 
-          <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition">
-              <Image src="/logo_green.png" alt="Dukand" width={40} height={40} className="rounded-lg shadow-sm" />
-              <span
-                className="font-extrabold text-lg md:text-xl text-slate-900 tracking-tight"
-                style={{ fontFamily: "var(--font-outfit), system-ui, sans-serif" }}
-              >
-                Dukand
-              </span>
-            </Link>
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100"
-              aria-label="Open menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          </div>
+          <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition">
+            <div className="w-8 h-8 rounded-lg bg-[#0A5C43] flex items-center justify-center text-white font-black text-sm shadow-sm">D</div>
+            <span className="font-black text-base text-slate-900 hidden sm:inline tracking-tight">Dukand</span>
+          </Link>
 
           <button
             onClick={requestLocation}
@@ -508,20 +491,10 @@ export default function HomeDashboard() {
             <span className="ml-auto text-[10px] font-bold text-slate-300 border border-slate-200 rounded px-1.5 py-0.5">⌘K</span>
           </button>
 
-            <div className="ml-auto flex items-center gap-2 shrink-0">
-            <a
-              href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Get the Dukand Android app on Google Play"
-              className="hidden md:inline-flex items-center gap-3 btn-primary"
-            >
-              <Smartphone className="w-4 h-4" />
-              Get the app
-            </a>
+          <div className="ml-auto flex items-center gap-2 shrink-0">
             <Link href="/customer/login" className="hidden md:inline text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-[#E2EFE8]">Customer</Link>
             <Link href="/merchant/login" className="hidden md:inline text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-[#E2EFE8]">Merchant</Link>
-            <Link href="/customer/signup" className="hidden md:inline px-4 py-2 bg-[#0A5C43] hover:bg-[#084d38] active:bg-[#073d2e] text-white text-xs font-bold rounded-xl transition shadow-sm">Sign Up</Link>
+            <Link href="/customer/signup" className="px-4 py-2 bg-[#0A5C43] hover:bg-[#084d38] active:bg-[#073d2e] text-white text-xs font-bold rounded-xl transition shadow-sm">Sign Up</Link>
           </div>
         </div>
 
@@ -529,7 +502,7 @@ export default function HomeDashboard() {
         <div className="md:hidden px-3 pb-3 pt-1 flex items-center gap-2 bg-white">
           <button
             onClick={requestLocation}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#F3FAF6] border border-[#D0E8DA] text-sm font-medium text-slate-600 shrink-0 max-w-[130px] transition"
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-[#F3FAF6] border border-[#D0E8DA] text-xs font-medium text-slate-600 shrink-0 max-w-[110px] transition"
           >
             {status === 'requesting'
               ? <Loader2 className="w-3 h-3 text-[#0A5C43] animate-spin shrink-0" />
@@ -538,51 +511,13 @@ export default function HomeDashboard() {
           </button>
           <button
             onClick={() => setSearchOpen(true)}
-            className="flex-1 flex items-center gap-2 px-3.5 py-2.5 bg-[#F3FAF6] border border-[#D0E8DA] rounded-xl text-sm text-[#9DB5A8] font-medium"
+            className="flex-1 flex items-center gap-2 px-3 py-2 bg-[#F3FAF6] border border-[#D0E8DA] rounded-lg text-sm text-[#9DB5A8] font-medium"
           >
             <Search className="w-3.5 h-3.5 shrink-0" />
             Search…
           </button>
-          <a
-            href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Get the Dukand Android app"
-            className="btn-primary"
-          >
-            <Download className="w-4 h-4" />
-            App
-          </a>
         </div>
       </header>
-
-      {/* Mobile menu sheet */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-60">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute top-0 right-0 w-full max-w-sm bg-white h-full shadow-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <Image src="/logo_green.png" alt="Dukand" width={36} height={36} className="rounded-md" />
-                <div>
-                  <div className="font-bold">Dukand</div>
-                  <div className="text-xs text-slate-400">Local shops near you</div>
-                </div>
-              </div>
-              <button onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-md text-slate-600">Close</button>
-            </div>
-            <div className="space-y-3">
-              <a href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp" target="_blank" rel="noopener noreferrer" className="btn-primary w-full inline-flex items-center justify-center gap-2">
-                <Smartphone className="w-4 h-4" />
-                Get the app
-              </a>
-              <Link href="/customer/signup" className="btn-secondary w-full inline-flex items-center justify-center">Sign up</Link>
-              <Link href="/customer/login" className="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-[#E2EFE8]">Customer login</Link>
-              <Link href="/merchant/login" className="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-[#E2EFE8]">Merchant login</Link>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Location denied banner */}
       {status === 'denied' && (
@@ -623,19 +558,6 @@ export default function HomeDashboard() {
                 </div>
               ))}
             </div>
-              <div className="mt-4 flex items-center gap-3">
-                <a
-                  href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Get the Dukand Android app on Google Play"
-                  className="btn-primary"
-                >
-                  <Download className="w-4 h-4" />
-                  Get the app
-                </a>
-                <Link href="/customer/signup" className="btn-secondary">Sign up</Link>
-              </div>
           </div>
           <div className="flex items-end justify-center relative min-h-[340px]">
             <div className="relative w-full h-[380px] flex items-end justify-center overflow-hidden">
@@ -753,23 +675,11 @@ export default function HomeDashboard() {
               }
             />
             {hasCoords && isLoading && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">{[...Array(3)].map((_, i) => <ShopCardSkeleton key={i} />)}</div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">{[...Array(3)].map((_, i) => <ShopCardSkeleton key={i} />)}</div>
             )}
             {hasCoords && !isLoading && openNowShops.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {openNowShops.slice(0, PAGE_SIZE).map((shop) => {
-                  const isPremium = PREMIUM_PLANS.includes(shop.plan);
-                  return (
-                    <div key={`open-${shop.id}`} className="relative">
-                      {isPremium && (
-                        <div className="absolute top-2 right-2 z-10 bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow flex items-center gap-0.5">
-                          <Award className="w-2.5 h-2.5" />PRO
-                        </div>
-                      )}
-                      <ShopCard shop={shop} />
-                    </div>
-                  );
-                })}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {openNowShops.slice(0, PAGE_SIZE).map((shop) => <ShopCard key={`open-${shop.id}`} shop={shop} />)}
               </div>
             )}
             {hasCoords && !isLoading && openNowShops.length === 0 && (
@@ -811,7 +721,7 @@ export default function HomeDashboard() {
             )}
 
             {hasCoords && isLoading && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">{[...Array(6)].map((_, i) => <ShopCardSkeleton key={i} />)}</div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">{[...Array(6)].map((_, i) => <ShopCardSkeleton key={i} />)}</div>
             )}
 
             {hasCoords && isError && !isLoading && (
@@ -825,7 +735,7 @@ export default function HomeDashboard() {
             {hasCoords && !isLoading && !isError && (
               filteredShops.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {filteredShops.slice(0, shopPage * PAGE_SIZE).map((shop) => {
                       const isPremium = PREMIUM_PLANS.includes(shop.plan);
                       return (
@@ -857,7 +767,7 @@ export default function HomeDashboard() {
         </div>
       </div>
 
-      {/* BottomNav is provided by RootLayout; avoid duplicate rendering here. */}
+      <BottomNav />
     </div>
   );
 }
