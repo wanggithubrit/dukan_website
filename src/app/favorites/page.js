@@ -10,7 +10,13 @@ import { ShopCardSkeleton } from '@/components/Skeletons';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { useUserCoordinates } from '@/hooks/useUserCoordinates';
-import { Heart, ArrowLeft, Store, AlertCircle } from 'lucide-react';
+import { 
+  Heart, 
+  ArrowLeft, 
+  Store, 
+  AlertCircle,
+  Loader2
+} from 'lucide-react';
 
 export default function FavoritesPage() {
   const { user } = useAuth();
@@ -43,7 +49,7 @@ export default function FavoritesPage() {
     return (
       <div className="min-h-screen bg-[#F8FAF9] flex items-center justify-center p-4">
         <div className="text-center bg-white p-8 rounded-3xl border border-[#E0EAE6] shadow-premium max-w-sm w-full flex flex-col items-center">
-          <ActivityIndicator className="w-10 h-10 text-primary animate-spin mb-4" />
+          <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
           <h3 className="text-sm font-extrabold text-slate-800">Checking Auth Status...</h3>
         </div>
       </div>
