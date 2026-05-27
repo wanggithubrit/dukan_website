@@ -679,7 +679,19 @@ export default function HomeDashboard() {
             )}
             {hasCoords && !isLoading && openNowShops.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {openNowShops.slice(0, PAGE_SIZE).map((shop) => <ShopCard key={`open-${shop.id}`} shop={shop} />)}
+                {openNowShops.slice(0, PAGE_SIZE).map((shop) => {
+                  const isPremium = PREMIUM_PLANS.includes(shop.plan);
+                  return (
+                    <div key={`open-${shop.id}`} className="relative">
+                      {isPremium && (
+                        <div className="absolute top-2 right-2 z-10 bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow flex items-center gap-0.5">
+                          <Award className="w-2.5 h-2.5" />PRO
+                        </div>
+                      )}
+                      <ShopCard shop={shop} />
+                    </div>
+                  );
+                })}
               </div>
             )}
             {hasCoords && !isLoading && openNowShops.length === 0 && (
