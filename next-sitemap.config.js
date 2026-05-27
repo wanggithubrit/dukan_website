@@ -1,5 +1,5 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
-  siteUrl: 'https://www.mydukan.online',
+  siteUrl: 'https://mydukan.online',
   generateRobotsTxt: true,
 }

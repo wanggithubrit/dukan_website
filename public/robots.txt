@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://www.mydukan.online
+Host: https://mydukan.online
 
 # Sitemaps
-Sitemap: https://www.mydukan.online/sitemap.xml
+Sitemap: https://mydukan.online/sitemap.xml
