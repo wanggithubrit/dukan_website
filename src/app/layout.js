@@ -57,7 +57,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable} h-full scroll-smooth antialiased`}>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`${inter.variable} ${outfit.variable} h-full scroll-smooth antialiased`}
+    >
       <body className="min-h-full flex flex-col bg-white text-slate-900 pb-20 md:pb-0">
         <Providers>
 

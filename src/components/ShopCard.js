@@ -66,31 +66,31 @@ export default function ShopCard({ shop }) {
         {/* ── Image ── */}
         <div className="relative overflow-hidden shrink-0" style={{ height: 150 }}>
           {hasImage ? (
-            <>
-              <img
-                src={shop.cover_image || shop.image}
-                alt={shop.name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
-              />
-              <div
-                className="absolute inset-0"
-                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.32) 0%, transparent 60%)' }}
-              />
-            </>
-          ) : (
-            <div
-              className="w-full h-full flex items-center justify-center"
-              style={{ backgroundColor: placeholderBg }}
-            >
-              <span className="text-2xl" style={{ opacity: 0.4 }}>
-                {CATEGORY_EMOJI[catKey] || '🏪'}
-              </span>
-            </div>
-          )}
+            <img
+              src={shop.cover_image || shop.image}
+              alt={shop.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+              onError={e => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '';
+                e.currentTarget.style.display = 'none';
+                const fallback = e.currentTarget.nextElementSibling;
+                if (fallback) fallback.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          <div
+            className="w-full h-full flex items-center justify-center"
+            style={{ backgroundColor: placeholderBg, display: hasImage ? 'none' : 'flex' }}
+          >
+            <span className="text-2xl" style={{ opacity: 0.4 }}>
+              {CATEGORY_EMOJI[catKey] || '🏪'}
+            </span>
+          </div>
 
           {/* Open/Closed pill — top left */}
           <div
-            className="absolute top-1.5 left-1.5 flex items-center gap-1 px-2 py-[3px] rounded-full"
+            className="absolute top-1.5 left-1.5 flex items-center gap-1 px-2 py-0.75 rounded-full"
             style={{ backgroundColor: isOpen ? '#CFFADF' : 'rgba(255,255,255,0.88)' }}
           >
             <span

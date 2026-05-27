@@ -10,7 +10,7 @@ import { ShopCardSkeleton } from '@/components/Skeletons';
 import {
   MapPin, Search, Clock, Store, ChevronDown, Heart,
   LayoutGrid, X, Package, ArrowRight, Navigation, Award,
-  AlertCircle, Loader2, Building2
+  AlertCircle, Loader2, Building2, Menu
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import heroIllustration from '../../public/hero-illustration.png';
@@ -100,7 +100,7 @@ function Highlight({ text = '', query = '' }) {
   return (
     <>
       {text.slice(0, i)}
-      <mark className="bg-[#D1FAE5] text-[#065F46] rounded px-0.5 not-italic">{text.slice(i, i + query.length)}</mark>
+      <mark className="bg-accent-soft text-brand-green-800 rounded px-0.5 not-italic">{text.slice(i, i + query.length)}</mark>
       {text.slice(i + query.length)}
     </>
   );
@@ -122,7 +122,7 @@ function ShopSearchCard({ shop, query, onClick }) {
         </div>
       )}
       {/* Image */}
-      <div className="w-full h-[72px] bg-[#F0FAF5] overflow-hidden shrink-0">
+      <div className="w-full h-18 bg-primary-lighter overflow-hidden shrink-0">
         {shop.cover_image || shop.image
           ? <img src={shop.cover_image || shop.image} alt={shop.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           : <div className="w-full h-full flex items-center justify-center text-2xl">{CATEGORY_MAPPING[shop.category]?.emoji || '🏪'}</div>
@@ -157,7 +157,7 @@ function ProductSearchCard({ item, idx, query, onClick }) {
       style={{ '--tw-shadow': '0 8px 24px rgba(10,92,67,0.12)' }}
     >
       {/* Image */}
-      <div className="w-full h-[80px] bg-[#F3FAF6] overflow-hidden shrink-0 flex items-center justify-center">
+      <div className="w-full h-20 bg-primary-lighter overflow-hidden shrink-0 flex items-center justify-center">
         {item.image
           ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           : <Package className="w-7 h-7 text-[#0A5C43]/25" />
@@ -215,7 +215,7 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
   const hasResults = filteredShops.length > 0 || productResults.length > 0;
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col">
+    <div className="fixed inset-0 z-100 flex flex-col">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       <div
@@ -231,7 +231,7 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
         <div className="px-4 pt-4 pb-0 bg-white">
           <div className="flex items-center gap-2.5">
             <div
-              className="flex-1 flex items-center gap-2.5 px-3.5 py-3 rounded-xl border-[1.5px] bg-[#F3FAF6] border-[#C8E8D6] transition-all duration-150 focus-within:border-[#0A5C43] focus-within:bg-white focus-within:shadow-sm"
+              className="flex-1 flex items-center gap-2.5 px-3.5 py-3 rounded-xl border-2 bg-primary-lighter border-brand-green-200 transition-all duration-150 focus-within:border-brand-green-700 focus-within:bg-white focus-within:shadow-sm"
               style={{ '--tw-shadow': '0 0 0 3px rgba(10,92,67,0.08)' }}
             >
               <Search className="w-4 h-4 text-[#0A5C43] shrink-0" />
@@ -241,7 +241,7 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
                 value={query}
                 onChange={(e) => onSubmit(e.target.value)}
                 placeholder="Search shops, products, categories…"
-                className="flex-1 bg-transparent text-sm font-medium text-slate-800 placeholder-[#9DB5A8] focus:outline-none"
+                className="flex-1 bg-transparent text-sm font-medium text-slate-800 placeholder-slate-500 focus:outline-none"
                 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
               />
               {query && (
@@ -252,7 +252,7 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
             </div>
             <button
               onClick={onClose}
-              className="w-11 h-11 rounded-xl border-[1.5px] border-[#E0EDE5] bg-[#F8FBF9] hover:bg-[#E8F5EE] flex items-center justify-center shrink-0 transition text-[#6B8E7E]"
+              className="w-11 h-11 rounded-xl border-2 border-brand-green-100 bg-primary-lighter hover:bg-brand-green-50 flex items-center justify-center shrink-0 transition text-brand-green-700"
             >
               <X className="w-4 h-4" />
             </button>
@@ -277,7 +277,7 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
                 onClick={() => setActiveTab(t.id)}
                 className={`px-3.5 py-2 text-[11px] font-bold rounded-t-lg transition-all ${
                   activeTab === t.id
-                    ? 'bg-[#F3FAF6] text-[#0A5C43] border-b-2 border-[#0A5C43]'
+                    ? 'bg-primary-lighter text-brand-green-800 border-b-2 border-brand-green-700'
                     : 'text-slate-400 hover:text-slate-600 border-b-2 border-transparent'
                 }`}
                 style={{ letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '10px' }}
@@ -286,15 +286,15 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
               </button>
             ))}
           </div>
-          <div className="h-px bg-[#F0F7F3]" />
+          <div className="h-px bg-brand-green-100" />
         </div>
 
         {/* ── Results ── */}
         <div className="flex-1 overflow-y-auto px-4 pb-6">
           {!hasResults && query.trim() ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-[#F3FAF6] border border-[#E0EDE5] flex items-center justify-center mb-3">
-                <Search className="w-6 h-6 text-[#0A5C43]/25" />
+              <div className="w-14 h-14 rounded-2xl bg-primary-lighter border border-brand-green-100 flex items-center justify-center mb-3">
+                <Search className="w-6 h-6 text-brand-green-700/40" />
               </div>
               <p className="text-sm font-bold text-slate-600">Nothing found for &ldquo;{query}&rdquo;</p>
               <p className="text-xs text-slate-400 mt-1">Try a different keyword or expand your range</p>
@@ -369,12 +369,12 @@ function SectionHeader({ icon: Icon, iconColor = '#0A5C43', iconBg = '#E8F5EE', 
 // ─── EMPTY STATE ──────────────────────────────────────────────────────────────
 function EmptyState({ icon: Icon, title, subtitle }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-6 text-center rounded-2xl border border-dashed border-[#C8E6D4] bg-[#FAFFFE]">
-      <div className="w-12 h-12 rounded-xl bg-[#F0FAF5] flex items-center justify-center mb-3">
-        <Icon className="w-5 h-5 text-[#0A5C43]/30" />
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center rounded-2xl border border-dashed border-brand-green-200 bg-primary-lighter">
+      <div className="w-12 h-12 rounded-xl bg-primary-lighter flex items-center justify-center mb-3">
+        <Icon className="w-5 h-5 text-brand-green-700/40" />
       </div>
       <p className="text-sm font-semibold text-slate-600">{title}</p>
-      {subtitle && <p className="text-xs text-slate-400 mt-1 max-w-[200px] leading-relaxed">{subtitle}</p>}
+      {subtitle && <p className="text-xs text-slate-400 mt-1 max-w-50 leading-relaxed">{subtitle}</p>}
     </div>
   );
 }
@@ -384,6 +384,7 @@ export default function HomeDashboard() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [range, setRange] = useState('All');
   const [activeBanner, setActiveBanner] = useState(0);
   const [shopPage, setShopPage] = useState(1);
@@ -448,7 +449,8 @@ export default function HomeDashboard() {
       className="w-full min-h-screen text-slate-900 pb-24"
       style={{
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-        background: '#F5FAF7',
+        background:
+          'radial-gradient(circle at top, rgba(10, 92, 67, 0.18), transparent 24%), radial-gradient(circle at bottom, rgba(66, 176, 126, 0.14), transparent 28%), linear-gradient(180deg, #F8FCF9 0%, #F3FAF6 36%, #EEF8F2 100%)',
       }}
     >
       {searchOpen && (
@@ -462,17 +464,33 @@ export default function HomeDashboard() {
       )}
 
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-50 bg-white border-b border-[#E2EFE8]" style={{ boxShadow: '0 1px 3px rgba(10,92,67,0.06)' }}>
+      <header className="sticky top-0 z-50 bg-white/95 border-b border-brand-green-100 backdrop-blur" style={{ boxShadow: '0 1px 3px rgba(10,92,67,0.06)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
 
-          <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition">
-            <div className="w-8 h-8 rounded-lg bg-[#0A5C43] flex items-center justify-center text-white font-black text-sm shadow-sm">D</div>
-            <span className="font-black text-base text-slate-900 hidden sm:inline tracking-tight">Dukand</span>
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2">
+              <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition">
+                <Image src="/logo_green.png" alt="Dukand" width={34} height={34} className="rounded-xl shadow-sm" />
+                <span
+                  className="font-extrabold text-lg md:text-xl text-slate-900 tracking-tight"
+                  style={{ fontFamily: "var(--font-outfit), system-ui, sans-serif" }}
+                >
+                  Dukand
+                </span>
+              </Link>
+            </div>
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden ml-1 p-2 rounded-lg text-brand-green-800 bg-primary-lighter border border-brand-green-200"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
 
           <button
             onClick={requestLocation}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 shrink-0 transition max-w-[200px] hover:bg-slate-50 border border-[#E2EFE8] bg-white"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 shrink-0 transition max-w-50 hover:bg-primary-lighter border border-brand-green-100 bg-white"
           >
             {status === 'requesting'
               ? <Loader2 className="w-3.5 h-3.5 text-[#0A5C43] animate-spin shrink-0" />
@@ -484,7 +502,7 @@ export default function HomeDashboard() {
           {/* Search trigger — desktop */}
           <button
             onClick={() => setSearchOpen(true)}
-            className="hidden md:flex flex-1 items-center gap-2.5 max-w-md px-4 py-2.5 bg-[#F3FAF6] border border-[#D0E8DA] rounded-xl text-sm text-[#9DB5A8] font-medium hover:bg-[#EBF7F1] hover:border-[#A8D4BA] transition text-left"
+            className="hidden md:flex flex-1 items-center gap-2.5 max-w-md px-4 py-2.5 bg-primary-lighter border border-brand-green-200 rounded-xl text-sm text-slate-500 font-medium hover:bg-brand-green-50 hover:border-brand-green-300 transition text-left"
           >
             <Search className="w-4 h-4 shrink-0" />
             Search shops, products…
@@ -492,9 +510,18 @@ export default function HomeDashboard() {
           </button>
 
           <div className="ml-auto flex items-center gap-2 shrink-0">
-            <Link href="/customer/login" className="hidden md:inline text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-[#E2EFE8]">Customer</Link>
-            <Link href="/merchant/login" className="hidden md:inline text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-[#E2EFE8]">Merchant</Link>
-            <Link href="/customer/signup" className="px-4 py-2 bg-[#0A5C43] hover:bg-[#084d38] active:bg-[#073d2e] text-white text-xs font-bold rounded-xl transition shadow-sm">Sign Up</Link>
+            <a
+              href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-sm"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              Download app
+            </a>
+            <Link href="/customer/login" className="hidden md:inline text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-brand-green-100">Customer</Link>
+            <Link href="/merchant/login" className="hidden md:inline text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-brand-green-100">Merchant</Link>
+            <Link href="/customer/signup" className="hidden md:inline px-4 py-2 bg-brand-green-700 hover:bg-brand-green-800 active:bg-brand-green-900 text-white text-xs font-bold rounded-xl transition shadow-sm">Sign Up</Link>
           </div>
         </div>
 
@@ -502,7 +529,7 @@ export default function HomeDashboard() {
         <div className="md:hidden px-3 pb-3 pt-1 flex items-center gap-2 bg-white">
           <button
             onClick={requestLocation}
-            className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-[#F3FAF6] border border-[#D0E8DA] text-xs font-medium text-slate-600 shrink-0 max-w-[110px] transition"
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary-lighter border border-brand-green-200 text-sm font-medium text-slate-600 shrink-0 max-w-27.5 transition"
           >
             {status === 'requesting'
               ? <Loader2 className="w-3 h-3 text-[#0A5C43] animate-spin shrink-0" />
@@ -511,13 +538,40 @@ export default function HomeDashboard() {
           </button>
           <button
             onClick={() => setSearchOpen(true)}
-            className="flex-1 flex items-center gap-2 px-3 py-2 bg-[#F3FAF6] border border-[#D0E8DA] rounded-lg text-sm text-[#9DB5A8] font-medium"
+            className="flex-1 flex items-center gap-2 px-3 py-2.5 bg-primary-lighter border border-brand-green-200 rounded-xl text-sm text-slate-500 font-medium"
           >
             <Search className="w-3.5 h-3.5 shrink-0" />
             Search…
           </button>
         </div>
       </header>
+
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-60 md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-72 bg-white border-l border-brand-green-100 px-4 py-5 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Image src="/logo_green.png" alt="Dukand" width={30} height={30} className="rounded-lg" />
+                <div>
+                  <div className="font-bold text-slate-900">Dukand</div>
+                  <div className="text-[10px] text-slate-400">Local shops near you</div>
+                </div>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)} className="px-2 py-1 rounded-lg text-xs font-semibold bg-primary-lighter text-brand-green-800">Close</button>
+            </div>
+            <div className="space-y-2">
+              <a href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp" target="_blank" rel="noopener noreferrer" className="btn-primary w-full inline-flex items-center justify-center gap-2">
+                <MapPin className="w-4 h-4" />
+                Download app
+              </a>
+              <Link href="/customer/signup" className="btn-secondary w-full inline-flex items-center justify-center">Sign up</Link>
+              <Link href="/customer/login" className="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-brand-green-100 text-sm font-semibold text-slate-700">Customer login</Link>
+              <Link href="/merchant/login" className="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-brand-green-100 text-sm font-semibold text-slate-700">Merchant login</Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Location denied banner */}
       {status === 'denied' && (
@@ -531,44 +585,81 @@ export default function HomeDashboard() {
       <div className="max-w-7xl mx-auto">
 
         {/* ── HERO — desktop ── */}
-        <div className="hidden md:grid grid-cols-2 gap-0 border-b border-[#D8EDE3] overflow-hidden" style={{ background: 'linear-gradient(135deg, #EAF5EE 0%, #F0FAF5 100%)' }}>
+        <div
+          className="hidden md:grid grid-cols-2 gap-0 border-b border-brand-green-100 overflow-hidden rounded-b-3xl"
+          style={{
+            background:
+              'radial-gradient(circle at top left, rgba(12, 85, 61, 0.28), transparent 26%), radial-gradient(circle at bottom right, rgba(24, 129, 91, 0.24), transparent 24%), linear-gradient(145deg, #E5F6EE 0%, #F0FAF5 42%, #FCFFFD 100%)',
+          }}
+        >
           <div className="px-10 pt-12 pb-10 flex flex-col justify-center space-y-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#B0D9C0] bg-white/60 w-fit">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0A5C43] animate-pulse" />
-              <span className="text-xs font-semibold text-[#0A5C43]">Discover local shops</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-green-200 bg-white/70 w-fit">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-green-700 animate-pulse" />
+              <span className="text-xs font-semibold text-brand-green-800">Discover local shops</span>
             </div>
             <div>
               <h1 className="text-4xl lg:text-5xl font-black text-slate-900 leading-[1.08] tracking-tight">
-                Find shops &amp; <span className="text-[#0A5C43]">products</span>
+                Find shops &amp; <span className="text-brand-green-800">products</span>
               </h1>
               <p className="text-4xl lg:text-5xl font-black text-slate-900 leading-[1.08] tracking-tight">near you</p>
             </div>
-            <p className="text-sm text-slate-500 font-medium max-w-[300px] leading-relaxed">Shop local. Save time. Support your community.</p>
-            <div className="flex flex-col gap-2 max-w-[280px] pt-1">
+            <p className="text-sm text-slate-600 font-medium max-w-75 leading-relaxed">Search local stores, check open times, and save favourites with the Dukand app.</p>
+
+            <div className="rounded-2xl border border-brand-green-200 bg-white/85 p-4 shadow-sm backdrop-blur max-w-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-brand-green-800">Download the app</p>
+                  <p className="text-sm text-slate-600 mt-1 leading-relaxed">Get faster local discovery, live store updates, and instant offers on the go.</p>
+                </div>
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-green-800 hover:bg-brand-green-900 text-white text-xs font-bold transition shadow-sm shrink-0"
+                >
+                  Download
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {[
+                  { value: 'Live', label: 'status' },
+                  { value: 'Saved', label: 'favourites' },
+                  { value: 'Deals', label: 'nearby' },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl bg-primary-lighter border border-brand-green-100 px-2.5 py-2 text-center">
+                    <p className="text-sm font-black text-brand-green-900">{item.value}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-0.5">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 max-w-70 pt-1">
               {[
-                { icon: Store,      label: 'Local shops near you' },
-                { icon: LayoutGrid, label: 'Wide range of categories' },
-                { icon: Heart,      label: 'Support local businesses' },
+                { icon: Store, label: 'Live open and close status' },
+                { icon: LayoutGrid, label: 'Browse products by category' },
+                { icon: Heart, label: 'Save favourites for later' },
               ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 bg-white/70 border border-[#D0E9DB]">
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 bg-[#E6F5EC]">
-                    <Icon className="w-3.5 h-3.5 text-[#0A5C43]" />
+                <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 bg-white/70 border border-brand-green-100">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 bg-primary-lighter">
+                    <Icon className="w-3.5 h-3.5 text-brand-green-700" />
                   </div>
                   {label}
                 </div>
               ))}
             </div>
           </div>
-          <div className="flex items-end justify-center relative min-h-[340px]">
-            <div className="relative w-full h-[380px] flex items-end justify-center overflow-hidden">
+          <div className="flex items-end justify-center relative min-h-85">
+            <div className="relative w-full h-95 flex items-end justify-center overflow-hidden">
               <Image src={heroIllustration} alt="Dukand" priority className="w-full h-full object-contain object-bottom" />
-              <div className="absolute top-8 left-6 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 z-10 bg-white border border-[#D0E9DB] shadow-sm">
-                <Store className="w-4 h-4 text-[#0A5C43]" />Nearby shops
+              <div className="absolute top-8 left-6 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 z-10 bg-white border border-brand-green-100 shadow-sm">
+                <Store className="w-4 h-4 text-brand-green-700" />Nearby shops
               </div>
-              <div className="absolute top-20 right-6 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-white z-10 bg-[#0A5C43]" style={{ boxShadow: '0 4px 16px rgba(10,92,67,0.3)' }}>
+              <div className="absolute top-20 right-6 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-white z-10 bg-brand-green-700" style={{ boxShadow: '0 4px 16px rgba(10,92,67,0.3)' }}>
                 <Clock className="w-3.5 h-3.5" />Save time everyday
               </div>
-              <div className="absolute bottom-16 right-8 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 z-10 bg-white border border-[#D0E9DB] shadow-sm">
+              <div className="absolute bottom-16 right-8 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 z-10 bg-white border border-brand-green-100 shadow-sm">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />Open now
               </div>
             </div>
@@ -576,17 +667,17 @@ export default function HomeDashboard() {
         </div>
 
         {/* ── TOOLBAR ── */}
-        <div className="bg-white border-b border-[#E2EFE8] sticky top-14 z-40">
+        <div className="bg-white border-b border-brand-green-100 sticky top-14 z-40">
           {/* Range */}
-          <div className="px-4 md:px-6 py-2.5 flex items-center gap-3 overflow-x-auto no-scrollbar border-b border-[#F0F7F3]">
+          <div className="px-4 md:px-6 py-2.5 flex items-center gap-3 overflow-x-auto no-scrollbar border-b border-brand-green-100">
             <button
               onClick={requestLocation}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 transition shrink-0 hover:bg-[#F3FAF6] border border-[#E2EFE8]"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 transition shrink-0 hover:bg-primary-lighter border border-brand-green-100"
             >
               <Navigation className="w-3.5 h-3.5 text-[#0A5C43]" />
               {status === 'requesting' ? 'Locating…' : 'My location'}
             </button>
-            <div className="w-px h-4 bg-[#E2EFE8] hidden md:block shrink-0" />
+            <div className="w-px h-4 bg-brand-green-100 hidden md:block shrink-0" />
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Range</span>
             <div className="flex gap-1.5">
               {RANGES.map((r) => (
@@ -594,7 +685,7 @@ export default function HomeDashboard() {
                   key={r}
                   onClick={() => setRange(r)}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition shrink-0 ${
-                    range === r ? 'bg-[#0A5C43] text-white' : 'text-slate-500 bg-[#F3FAF6] hover:bg-[#E8F5EE] border border-[#E2EFE8]'
+                    range === r ? 'bg-brand-green-700 text-white' : 'text-slate-500 bg-primary-lighter hover:bg-brand-green-50 border border-brand-green-100'
                   }`}
                 >
                   {r === 'All' ? 'Any' : `${r}km`}
@@ -612,7 +703,7 @@ export default function HomeDashboard() {
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition shrink-0 ${
-                    active ? 'text-white' : 'text-slate-600 bg-[#F3FAF6] hover:bg-[#E8F5EE] border border-[#E2EFE8]'
+                    active ? 'text-white' : 'text-slate-600 bg-primary-lighter hover:bg-brand-green-50 border border-brand-green-100'
                   }`}
                   style={active ? { background: meta.activeBg } : {}}
                 >
@@ -698,15 +789,15 @@ export default function HomeDashboard() {
             />
 
             {!hasCoords && status !== 'requesting' && (
-              <div className="bg-white border border-[#E2EFE8] rounded-2xl p-10 text-center space-y-4">
-                <div className="w-14 h-14 bg-[#F3FAF6] border border-[#D0E9DB] rounded-2xl flex items-center justify-center mx-auto">
-                  <Navigation className="w-6 h-6 text-[#0A5C43]" />
+              <div className="bg-white border border-brand-green-100 rounded-2xl p-10 text-center space-y-4 shadow-sm">
+                <div className="w-14 h-14 bg-primary-lighter border border-brand-green-100 rounded-2xl flex items-center justify-center mx-auto">
+                  <Navigation className="w-6 h-6 text-brand-green-700" />
                 </div>
                 <div>
                   <p className="font-bold text-slate-800">Share your location</p>
-                  <p className="text-xs text-slate-400 mt-1.5 max-w-[240px] mx-auto leading-relaxed">We need your location to show nearby shops and accurate distances</p>
+                  <p className="text-xs text-slate-400 mt-1.5 max-w-60 mx-auto leading-relaxed">We need your location to show nearby shops and accurate distances</p>
                 </div>
-                <button onClick={requestLocation} className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#0A5C43] hover:bg-[#084d38] text-white text-sm font-semibold rounded-xl transition shadow-sm">
+                <button onClick={requestLocation} className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-green-700 hover:bg-brand-green-800 text-white text-sm font-semibold rounded-xl transition shadow-sm">
                   <Navigation className="w-4 h-4" />Use my location
                 </button>
                 {status === 'denied' && <p className="text-xs text-amber-600 font-medium">Location was blocked — allow it in browser settings and try again.</p>}

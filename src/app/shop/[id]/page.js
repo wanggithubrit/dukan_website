@@ -13,6 +13,18 @@ import {
   ArrowLeft, Phone, MapPin, Share2, Heart, Smartphone, Zap, Compass, ShoppingBag, ChevronRight, Search, X, Sparkles
 } from 'lucide-react';
 
+const API_BASE_URL = 'https://dukan-backend-0cc9.onrender.com';
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=60';
+
+const normalizeImageUrl = (img) => {
+  if (!img || typeof img !== 'string') return '';
+  const value = img.trim();
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+  if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
+  return `${API_BASE_URL}/${value.replace(/^\/+/, '')}`;
+};
+
 // Color Palette - Premium Green Theme
 const colors = {
   primary: '#0E5C42',
@@ -79,12 +91,16 @@ const ItemModal = ({ item, visible, onClose }) => {
             {/* Product Image */}
             <div className="relative w-full aspect-square bg-slate-100 overflow-hidden">
               <motion.img
-                src={item.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop&q=60'}
+                src={normalizeImageUrl(item.image) || PLACEHOLDER_IMAGE}
                 alt={item.name}
                 className="w-full h-full object-cover"
                 initial={{ scale: 1.1 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.5 }}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = PLACEHOLDER_IMAGE;
+                }}
               />
               <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
 
@@ -225,8 +241,20 @@ export default function ShopDetailPage() {
     retry: 2,
   });
 
-  const { shop = {}, banners = [], items = [] } = data;
+  const { shop = {}, banners = [], media = [], items = [] } = data;
   const isPremium = shop.plan === 'pro';
+  const galleryImages = Array.isArray(media)
+    ? media.map((entry) => normalizeImageUrl(entry?.image || entry?.src || entry?.url)).filter(Boolean)
+    : [];
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  useEffect(() => {
+    if (galleryImages.length <= 1) return;
+    const interval = setInterval(() => {
+      setGalleryIndex((current) => (current + 1) % galleryImages.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [galleryImages.length]);
   
   // Format distance
   const formatDistance = (distance) => {
@@ -350,7 +378,7 @@ export default function ShopDetailPage() {
           <ShoppingBag className="w-10 h-10 text-red-500" />
         </motion.div>
         <h1 className="text-2xl font-black text-slate-900">Shop not found</h1>
-        <p className="text-slate-600 mt-2 text-center">The shop you're looking for doesn't exist or is no longer available.</p>
+        <p className="text-slate-600 mt-2 text-center">The shop you are looking for does not exist or is no longer available.</p>
         <motion.button
           onClick={() => router.push('/')}
           className="mt-6 px-8 py-3 bg-linear-to-r from-green-600 to-green-700 text-white rounded-xl font-bold hover:shadow-lg"
@@ -363,8 +391,10 @@ export default function ShopDetailPage() {
     );
   }
 
-  const coverImage = shop.cover_image || shop.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=60';
-  const avatarUrl = shop.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=100&auto=format&fit=crop&q=60';
+  const coverImage = galleryImages[galleryIndex] || normalizeImageUrl(shop.cover_image) || normalizeImageUrl(shop.image) || PLACEHOLDER_IMAGE;
+  const avatarUrl = normalizeImageUrl(shop.image) || normalizeImageUrl(shop.cover_image) || galleryImages[0] || PLACEHOLDER_IMAGE;
+  const heroImageKey = `${shop.id || 'shop'}-${coverImage}`;
+  const avatarImageKey = `${shop.id || 'shop'}-${avatarUrl}`;
   
   const googleMapsUrl = shop.latitude && shop.longitude 
     ? `https://maps.google.com/?q=${shop.latitude},${shop.longitude}`
@@ -380,12 +410,17 @@ export default function ShopDetailPage() {
         transition={{ duration: 0.6 }}
       >
         <motion.img
+          key={heroImageKey}
           src={coverImage}
           alt={shop.name}
           className="w-full h-full object-cover"
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.8 }}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = PLACEHOLDER_IMAGE;
+          }}
         />
         <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/30 to-transparent" />
         
@@ -432,7 +467,16 @@ export default function ShopDetailPage() {
                 className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-md shrink-0 border-2 border-green-100 bg-slate-100"
                 whileHover={{ scale: 1.05 }}
               >
-                <img src={avatarUrl} alt={shop.name} className="w-full h-full object-cover" />
+                <img
+                  key={avatarImageKey}
+                  src={avatarUrl}
+                  alt={shop.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = PLACEHOLDER_IMAGE;
+                  }}
+                />
               </motion.div>
               
             <div className="grow">
@@ -717,7 +761,7 @@ export default function ShopDetailPage() {
           >
             <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-base font-bold text-slate-800">No products available</h3>
-            <p className="text-xs text-slate-500 mt-2">This vendor hasn't uploaded any products yet</p>
+            <p className="text-xs text-slate-500 mt-2">This vendor has not uploaded any products yet</p>
           </motion.div>
         ) : filteredItems.length === 0 && showSearch ? (
           <motion.div 
