@@ -10,7 +10,7 @@ import { ShopCardSkeleton } from '@/components/Skeletons';
 import {
   MapPin, Search, Clock, Store, ChevronDown, Heart,
   LayoutGrid, X, Package, ArrowRight, Navigation, Award,
-  AlertCircle, Loader2, Building2
+  AlertCircle, Loader2, Building2, Smartphone, Download
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import heroIllustration from '../../public/hero-illustration.png';
@@ -466,7 +466,7 @@ export default function HomeDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
 
           <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition">
-            <div className="w-8 h-8 rounded-lg bg-[#0A5C43] flex items-center justify-center text-white font-black text-sm shadow-sm">D</div>
+            <Image src="/logo_green.png" alt="Dukand" width={40} height={40} className="rounded-lg shadow-sm" />
             <span className="font-black text-base text-slate-900 hidden sm:inline tracking-tight">Dukand</span>
           </Link>
 
@@ -492,6 +492,16 @@ export default function HomeDashboard() {
           </button>
 
           <div className="ml-auto flex items-center gap-2 shrink-0">
+            <a
+              href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Get the Dukand Android app on Google Play"
+              className="hidden md:inline-flex items-center gap-3 btn-primary"
+            >
+              <Smartphone className="w-4 h-4" />
+              Get the app
+            </a>
             <Link href="/customer/login" className="hidden md:inline text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-[#E2EFE8]">Customer</Link>
             <Link href="/merchant/login" className="hidden md:inline text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-[#E2EFE8]">Merchant</Link>
             <Link href="/customer/signup" className="px-4 py-2 bg-[#0A5C43] hover:bg-[#084d38] active:bg-[#073d2e] text-white text-xs font-bold rounded-xl transition shadow-sm">Sign Up</Link>
@@ -516,6 +526,16 @@ export default function HomeDashboard() {
             <Search className="w-3.5 h-3.5 shrink-0" />
             Search…
           </button>
+          <a
+            href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Get the Dukand Android app"
+            className="btn-primary"
+          >
+            <Download className="w-4 h-4" />
+            App
+          </a>
         </div>
       </header>
 
@@ -558,6 +578,19 @@ export default function HomeDashboard() {
                 </div>
               ))}
             </div>
+              <div className="mt-4 flex items-center gap-3">
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Get the Dukand Android app on Google Play"
+                  className="btn-primary"
+                >
+                  <Download className="w-4 h-4" />
+                  Get the app
+                </a>
+                <Link href="/customer/signup" className="btn-secondary">Sign up</Link>
+              </div>
           </div>
           <div className="flex items-end justify-center relative min-h-[340px]">
             <div className="relative w-full h-[380px] flex items-end justify-center overflow-hidden">

@@ -7,7 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 30000,
 });
 
 // Request interceptor to inject JWT token
@@ -34,7 +34,14 @@ api.interceptors.response.use(
     if (error.response) {
       console.error(`API Error: ${error.response.status}`, error.response.data);
     } else if (error.request) {
-      console.error('API Network Error:', error.message);
+        // include request URL when available and mark timeouts separately
+        const url = error.config?.url ? `${error.config.baseURL || ''}${error.config.url}` : 'unknown URL';
+        if (error.code === 'ECONNABORTED' || /timeout/i.test(error.message || '')) {
+          console.warn('API Network Timeout:', error.message, url);
+          error.isTimeout = true;
+        } else {
+          console.error('API Network Error:', error.message, url);
+        }
     } else {
       console.error('API Error:', error.message);
     }
