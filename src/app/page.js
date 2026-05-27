@@ -384,7 +384,7 @@ export default function HomeDashboard() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [range, setRange] = useState(5);
+  const [range, setRange] = useState('All');
   const [activeBanner, setActiveBanner] = useState(0);
   const [shopPage, setShopPage] = useState(1);
 
