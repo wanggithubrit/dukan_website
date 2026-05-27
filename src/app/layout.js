@@ -17,9 +17,42 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "Dukand - Local Shops Near You",
-  description: "Find and support the best local shops near you. Get instant access to Grocery, Fashion, Electronics, Pharmacy, and Restaurants in your community.",
-  metadataBase: new URL('https://dukan-backend-0cc9.onrender.com'),
+  title: "Dukan – Discover Nearby Local Shops in Nagaland",
+
+  description:
+    "Discover nearby local shops, products, and offers with Dukan. Explore grocery, fashion, electronics, restaurants, and more near you in Nagaland.",
+
+  metadataBase: new URL("https://mydukan.online"),
+
+  keywords: [
+    "Dukand",
+    "mydukan",
+    "dukan",
+    "local shops",
+    "Nagaland marketplace",
+    "shops near me",
+    "hyperlocal shopping",
+    "Dimapur shops",
+    "Kohima shops",
+    "local business app",
+  ],
+
+  openGraph: {
+    title: "Dukan – Discover Nearby Local Shops",
+    description:
+      "Explore nearby shops, products, and local offers with Dukan.",
+    url: "https://mydukan.online",
+    siteName: "Dukan",
+    locale: "en_US",
+    type: "website",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "Dukan – Discover Nearby Local Shops",
+    description:
+      "Find nearby local shops, products, and offers with Dukan.",
+  },
 };
 
 export default function RootLayout({ children }) {
