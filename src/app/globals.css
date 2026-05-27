@@ -1,26 +1,213 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME DEFINITIONS & SYSTEM TOKENS (Tailwind v4 Setup)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@theme {
+  /* Brand Green Colors matching your mobile design tokens */
+  --color-brand-green-50: #E6F4EF;
+  --color-brand-green-100: #CFFADF;
+  --color-brand-green-150: #A8C5BB;
+  --color-brand-green-200: #8BB0A4;
+  --color-brand-green-300: #6B9588;
+  --color-brand-green-400: #4B7A6C;
+  --color-brand-green-500: #2C6051;
+  --color-brand-green-600: #147A5A;
+  --color-brand-green-700: #0A5C43;
+  --color-brand-green-800: #074532;
+  --color-brand-green-900: #052e16;
+  --color-brand-green-950: #031e15;
+
+  /* Primary App Mappings */
+  --color-primary: #0A5C43; 
+  --color-primary-dark: #074532;
+  --color-primary-mid: #147A5A;
+  --color-primary-light: #E6F4EF;
+  --color-primary-lighter: #F0F9F5;
+  
+  /* Accent Colors */
+  --color-accent: #17C26A;
+  --color-accent-soft: #D1FAE5;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE APP VARIABLE INJECTIONS & SYSTEM NORMALIZATION
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
+  --card: #ffffff;
+  --card-border: #e2e8f0; /* slate-200 */
+  --text-muted: #64748b; /* slate-500 */
+  --radius-standard: 12px;
+  --radius-large: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #020617; /* slate-950 */
+    --foreground: #f8fafc; /* slate-50 */
+    --card: #0f172a;       /* slate-900 */
+    --card-border: #1e293b; /* slate-800 */
+    --text-muted: #94a3b8; /* slate-400 */
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CUSTOM FUNCTIONAL UTILITIES 
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Professional hidden scrollbars for your categories ribbons */
+@utility no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+  &::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
+}
+
+/* Modern Typography Presets matching App Typography scale */
+.text-heading-lg {
+  font-size: 1.875rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+
+.text-heading-md {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.text-body-muted {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT COMPONENTS & MATRIX REFINEMENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Dynamic Grid Architecture fallback */
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Professional Input Control Baseline */
+.input-base {
+  width: 100%;
+  height: 2.75rem;
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  font-size: 0.875rem;
+  background-color: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-standard);
+  color: var(--foreground);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-base:focus {
+  outline: none;
+  border-color: var(--color-brand-green-700);
+  box-shadow: 0 0 0 3px rgba(10, 92, 67, 0.15);
+}
+
+/* Professional Premium App Buttons System */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: var(--radius-standard);
+  background-color: var(--color-brand-green-700);
+  color: #ffffff;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-brand-green-800);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-standard);
+  background-color: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--card-border);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: var(--background);
+  border-color: var(--text-muted);
+}
+
+/* Flex Positioning Helpers */
+.flex-center-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE MEDIA QUERIES & HARDWARE ACCELERATION
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .text-heading-lg {
+    font-size: 1.5rem;
+  }
+
+  .text-heading-md {
+    font-size: 1.25rem;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 0.5rem 1rem;
+    font-size: 0.813rem;
+  }
+
+  .grid-auto {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Reduced Motion Safety */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
