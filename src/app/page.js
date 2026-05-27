@@ -15,7 +15,7 @@ import {
 import BottomNav from '@/components/BottomNav';
 import heroIllustration from '../../public/hero-illustration.png';
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 8;
 const RANGES = [1, 5, 10, 25, 'All'];
 const PREMIUM_PLANS = ['Pro', 'Business', 'Premium', 'pro', 'business', 'premium'];
 const LOC_STORAGE_KEY = 'dukand_coords';
@@ -675,10 +675,10 @@ export default function HomeDashboard() {
               }
             />
             {hasCoords && isLoading && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">{[...Array(3)].map((_, i) => <ShopCardSkeleton key={i} />)}</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">{[...Array(3)].map((_, i) => <ShopCardSkeleton key={i} />)}</div>
             )}
             {hasCoords && !isLoading && openNowShops.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {openNowShops.slice(0, PAGE_SIZE).map((shop) => {
                   const isPremium = PREMIUM_PLANS.includes(shop.plan);
                   return (
@@ -733,7 +733,7 @@ export default function HomeDashboard() {
             )}
 
             {hasCoords && isLoading && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">{[...Array(6)].map((_, i) => <ShopCardSkeleton key={i} />)}</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">{[...Array(6)].map((_, i) => <ShopCardSkeleton key={i} />)}</div>
             )}
 
             {hasCoords && isError && !isLoading && (
@@ -747,7 +747,7 @@ export default function HomeDashboard() {
             {hasCoords && !isLoading && !isError && (
               filteredShops.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {filteredShops.slice(0, shopPage * PAGE_SIZE).map((shop) => {
                       const isPremium = PREMIUM_PLANS.includes(shop.plan);
                       return (
