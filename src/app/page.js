@@ -7,35 +7,36 @@ import Image from 'next/image';
 import api from '@/utils/api';
 import ShopCard from '@/components/ShopCard';
 import { ShopCardSkeleton } from '@/components/Skeletons';
+import BottomNav from '@/components/BottomNav';
+import heroIllustration from '../../public/hero-illustration.png';
 import {
   MapPin, Search, Clock, Store, ChevronDown, Heart,
   LayoutGrid, X, Package, ArrowRight, Navigation, Award,
-  AlertCircle, Loader2, Building2, Menu
+  AlertCircle, Loader2, Building2, Download,
 } from 'lucide-react';
-import BottomNav from '@/components/BottomNav';
-import heroIllustration from '../../public/hero-illustration.png';
 
+/* ─── CONSTANTS ───────────────────────────────────────────────────────────── */
 const PAGE_SIZE = 6;
-const RANGES = [1, 5, 10, 25, 'All'];
+const RANGES = ['All', 1, 5, 10, 25];
 const PREMIUM_PLANS = ['Pro', 'Business', 'Premium', 'pro', 'business', 'premium'];
 const LOC_STORAGE_KEY = 'dukand_coords';
 
 const CATEGORY_MAPPING = {
-  All:         { activeBg: '#0A5C43', emoji: '🏪' },
-  Grocery:     { activeBg: '#00A854', emoji: '🛒' },
-  Footwear:    { activeBg: '#D97706', emoji: '👟' },
-  Fashion:     { activeBg: '#DB2777', emoji: '👗' },
-  Medicine:    { activeBg: '#DC2626', emoji: '💊' },
-  Electronics: { activeBg: '#2563EB', emoji: '📱' },
-  Bakeries:    { activeBg: '#D97706', emoji: '🥖' },
-  Rentals:     { activeBg: '#7C3AED', emoji: '🔑' },
-  Stationery:  { activeBg: '#0284C7', emoji: '📝' },
-  Furniture:   { activeBg: '#6D28D9', emoji: '🛋️' },
-  Books:       { activeBg: '#EA580C', emoji: '📚' },
-  Others:      { activeBg: '#475569', emoji: '📦' },
+  All:         { emoji: '🏪', color: '#1a5c3a', bg: '#e8f5ee' },
+  Grocery:     { emoji: '🛒', color: '#166534', bg: '#dcfce7' },
+  Footwear:    { emoji: '👟', color: '#92400e', bg: '#fef3c7' },
+  Fashion:     { emoji: '👗', color: '#9d174d', bg: '#fce7f3' },
+  Medicine:    { emoji: '💊', color: '#991b1b', bg: '#fee2e2' },
+  Electronics: { emoji: '📱', color: '#1e3a8a', bg: '#eff6ff' },
+  Bakeries:    { emoji: '🥖', color: '#78350f', bg: '#fef3c7' },
+  Rentals:     { emoji: '🔑', color: '#4c1d95', bg: '#ede9fe' },
+  Stationery:  { emoji: '📝', color: '#0c4a6e', bg: '#e0f2fe' },
+  Furniture:   { emoji: '🛋️', color: '#4a1d96', bg: '#ede9fe' },
+  Books:       { emoji: '📚', color: '#7c2d12', bg: '#fff7ed' },
+  Others:      { emoji: '📦', color: '#374151', bg: '#f3f4f6' },
 };
-
 const GLOBAL_CATEGORIES = Object.keys(CATEGORY_MAPPING);
+
 const toKm = (d) => (d == null || d === '' || d === 'undefined') ? 999 : Number(d);
 const byDistance = (a, b) => {
   const da = toKm(a.distance), db = toKm(b.distance);
@@ -44,7 +45,7 @@ const byDistance = (a, b) => {
   return ap === bp ? 0 : ap ? -1 : 1;
 };
 
-// ─── LOCATION HOOK ─────────────────────────────────────────────────────────────
+/* ─── LOCATION HOOK ───────────────────────────────────────────────────────── */
 function useLocation() {
   const [coords, setCoords] = useState({ lat: null, lon: null });
   const [status, setStatus] = useState('idle');
@@ -67,8 +68,7 @@ function useLocation() {
 
   const requestLocation = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setStatus('unavailable');
-      return;
+      setStatus('unavailable'); return;
     }
     setStatus('requesting');
     navigator.geolocation.getCurrentPosition(
@@ -79,9 +79,7 @@ function useLocation() {
         setCoords({ lat, lon });
         setLocLabel(label);
         setStatus('granted');
-        try {
-          localStorage.setItem(LOC_STORAGE_KEY, JSON.stringify({ lat, lon, label }));
-        } catch (_) {}
+        try { localStorage.setItem(LOC_STORAGE_KEY, JSON.stringify({ lat, lon, label })); } catch (_) {}
       },
       (err) => { console.warn('Geolocation error:', err.message); setStatus('denied'); },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 5 * 60 * 1000 }
@@ -92,7 +90,7 @@ function useLocation() {
   return { lat: coords.lat, lon: coords.lon, status, hasCoords, locLabel, requestLocation };
 }
 
-// ─── HIGHLIGHT MATCH ──────────────────────────────────────────────────────────
+/* ─── HIGHLIGHT ───────────────────────────────────────────────────────────── */
 function Highlight({ text = '', query = '' }) {
   if (!query.trim()) return <>{text}</>;
   const i = text.toLowerCase().indexOf(query.toLowerCase());
@@ -100,110 +98,34 @@ function Highlight({ text = '', query = '' }) {
   return (
     <>
       {text.slice(0, i)}
-      <mark className="bg-accent-soft text-brand-green-800 rounded px-0.5 not-italic">{text.slice(i, i + query.length)}</mark>
+      <mark className="dkn-mark">{text.slice(i, i + query.length)}</mark>
       {text.slice(i + query.length)}
     </>
   );
 }
 
-// ─── SHOP SEARCH CARD ────────────────────────────────────────────────────────
-function ShopSearchCard({ shop, query, onClick }) {
-  const isPremium = PREMIUM_PLANS.includes(shop.plan);
-  return (
-    <Link
-      href={`/shop/${shop.id}`}
-      onClick={onClick}
-      className="group relative flex flex-col bg-white border border-[#EAF3EE] rounded-2xl overflow-hidden transition-all duration-200 hover:border-[#0A5C43] hover:shadow-lg hover:-translate-y-0.5"
-      style={{ '--tw-shadow': '0 8px 24px rgba(10,92,67,0.12)' }}
-    >
-      {isPremium && (
-        <div className="absolute top-2 right-2 z-10 flex items-center gap-0.5 bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md">
-          <Award className="w-2.5 h-2.5" />PRO
-        </div>
-      )}
-      {/* Image */}
-      <div className="w-full h-18 bg-primary-lighter overflow-hidden shrink-0">
-        {shop.cover_image || shop.image
-          ? <img src={shop.cover_image || shop.image} alt={shop.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-          : <div className="w-full h-full flex items-center justify-center text-2xl">{CATEGORY_MAPPING[shop.category]?.emoji || '🏪'}</div>
-        }
-      </div>
-      {/* Body */}
-      <div className="p-2.5 flex flex-col gap-1 flex-1">
-        <p className="text-[12px] font-bold text-slate-800 leading-tight truncate">
-          <Highlight text={shop.name} query={query} />
-        </p>
-        <p className="text-[10px] text-slate-400 font-medium truncate">{shop.category}</p>
-        <div className="flex items-center justify-between mt-auto pt-1">
-          {shop.distance && (
-            <span className="text-[10px] text-[#6B8E7E] font-semibold">{Number(shop.distance).toFixed(1)} km</span>
-          )}
-          {shop.is_open && (
-            <span className="text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Open</span>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-// ─── PRODUCT SEARCH CARD ─────────────────────────────────────────────────────
-function ProductSearchCard({ item, idx, query, onClick }) {
-  return (
-    <Link
-      href={`/shop/${item.shopId}`}
-      onClick={onClick}
-      className="group flex flex-col bg-white border border-[#EAF3EE] rounded-2xl overflow-hidden transition-all duration-200 hover:border-[#0A5C43] hover:shadow-lg hover:-translate-y-0.5"
-      style={{ '--tw-shadow': '0 8px 24px rgba(10,92,67,0.12)' }}
-    >
-      {/* Image */}
-      <div className="w-full h-20 bg-primary-lighter overflow-hidden shrink-0 flex items-center justify-center">
-        {item.image
-          ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-          : <Package className="w-7 h-7 text-[#0A5C43]/25" />
-        }
-      </div>
-      {/* Body */}
-      <div className="p-2.5 flex flex-col gap-1 flex-1">
-        <p className="text-[12px] font-bold text-slate-800 leading-tight truncate">
-          <Highlight text={item.name} query={query} />
-        </p>
-        <p className="text-[10px] text-slate-400 font-medium truncate">{item.shopName}</p>
-        <div className="flex items-center justify-between mt-auto pt-1">
-          {item.price && <span className="text-[13px] font-black text-[#0A5C43]">₹{item.price}</span>}
-          {item.distance && <span className="text-[10px] text-[#6B8E7E] font-semibold">{Number(item.distance).toFixed(1)} km</span>}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-// ─── SEARCH OVERLAY ───────────────────────────────────────────────────────────
+/* ─── SEARCH OVERLAY ──────────────────────────────────────────────────────── */
 function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
   const inputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('all');
 
-  useEffect(() => {
-    if (inputRef.current) inputRef.current.focus();
-  }, []);
+  useEffect(() => { if (inputRef.current) inputRef.current.focus(); }, []);
 
   const { filteredShops, productResults } = useMemo(() => {
     if (!Array.isArray(shops)) return { filteredShops: [], productResults: [] };
     const q = query.toLowerCase().trim();
     const cutoff = range !== 'All' ? Number(range) : null;
     const products = [];
-
     const filtered = shops.filter((s) => {
       if (cutoff != null && toKm(s.distance) > cutoff) return false;
       if (!q) return true;
       return s.name?.toLowerCase().includes(q) || s.category?.toLowerCase().includes(q);
     }).sort(byDistance);
-
     shops.forEach((shop) => {
       (shop.items || []).forEach((item) => {
         if (q && !item.name?.toLowerCase().includes(q)) return;
         if (cutoff != null && toKm(shop.distance) > cutoff) return;
-        products.push({ ...item, shopId: shop.id, shopName: shop.name, distance: shop.distance, plan: shop.plan, is_open: shop.is_open });
+        products.push({ ...item, shopId: shop.id, shopName: shop.name, distance: shop.distance });
       });
     });
     products.sort(byDistance);
@@ -215,58 +137,39 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
   const hasResults = filteredShops.length > 0 || productResults.length > 0;
 
   return (
-    <div className="fixed inset-0 z-100 flex flex-col">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-
-      <div
-        className="relative z-10 flex flex-col bg-white w-full max-w-2xl mx-auto overflow-hidden"
-        style={{
-          borderRadius: '0 0 24px 24px',
-          maxHeight: '92vh',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.28), 0 4px 12px rgba(10,92,67,0.12)',
-          animation: 'searchIn 0.25s cubic-bezier(0.16,1,0.3,1)',
-        }}
-      >
-        {/* ── Search input ── */}
-        <div className="px-4 pt-4 pb-0 bg-white">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="flex-1 flex items-center gap-2.5 px-3.5 py-3 rounded-xl border-2 bg-primary-lighter border-brand-green-200 transition-all duration-150 focus-within:border-brand-green-700 focus-within:bg-white focus-within:shadow-sm"
-              style={{ '--tw-shadow': '0 0 0 3px rgba(10,92,67,0.08)' }}
-            >
-              <Search className="w-4 h-4 text-[#0A5C43] shrink-0" />
+    <div className="dkn-overlay-root">
+      <div className="dkn-overlay-backdrop" onClick={onClose} />
+      <div className="dkn-overlay-panel">
+        <div className="dkn-overlay-head">
+          <div className="dkn-search-row">
+            <div className="dkn-search-field">
+              <Search size={16} className="dkn-search-ico" />
               <input
                 ref={inputRef}
                 type="text"
                 value={query}
                 onChange={(e) => onSubmit(e.target.value)}
                 placeholder="Search shops, products, categories…"
-                className="flex-1 bg-transparent text-sm font-medium text-slate-800 placeholder-slate-500 focus:outline-none"
-                style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
+                className="dkn-search-input"
               />
               {query && (
-                <button onClick={() => onSubmit('')} className="text-slate-400 hover:text-slate-600 transition shrink-0">
-                  <X className="w-4 h-4" />
+                <button className="dkn-clear-btn" onClick={() => onSubmit('')}>
+                  <X size={14} />
                 </button>
               )}
             </div>
-            <button
-              onClick={onClose}
-              className="w-11 h-11 rounded-xl border-2 border-brand-green-100 bg-primary-lighter hover:bg-brand-green-50 flex items-center justify-center shrink-0 transition text-brand-green-700"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <button className="dkn-overlay-close" onClick={onClose}><X size={16} /></button>
           </div>
 
-          {/* Result count */}
-          <p className="text-[11px] text-slate-400 mt-2.5 px-1 font-medium">
+          <p className="dkn-result-count">
             {query.trim()
-              ? (hasResults ? `${filteredShops.length} shop${filteredShops.length !== 1 ? 's' : ''} · ${productResults.length} product${productResults.length !== 1 ? 's' : ''}` : 'No results found')
-              : 'Start typing to search shops and products'}
+              ? (hasResults
+                  ? `${filteredShops.length} shop${filteredShops.length !== 1 ? 's' : ''} · ${productResults.length} product${productResults.length !== 1 ? 's' : ''}`
+                  : 'No results found')
+              : 'Start typing to search…'}
           </p>
 
-          {/* ── Tabs ── */}
-          <div className="flex gap-1 mt-3">
+          <div className="dkn-tabs">
             {[
               { id: 'all', label: 'All' },
               { id: 'shops', label: `Shops (${filteredShops.length})` },
@@ -275,116 +178,84 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className={`px-3.5 py-2 text-[11px] font-bold rounded-t-lg transition-all ${
-                  activeTab === t.id
-                    ? 'bg-primary-lighter text-brand-green-800 border-b-2 border-brand-green-700'
-                    : 'text-slate-400 hover:text-slate-600 border-b-2 border-transparent'
-                }`}
-                style={{ letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '10px' }}
+                className={`dkn-tab${activeTab === t.id ? ' active' : ''}`}
               >
                 {t.label}
               </button>
             ))}
           </div>
-          <div className="h-px bg-brand-green-100" />
+          <div className="dkn-tab-line" />
         </div>
 
-        {/* ── Results ── */}
-        <div className="flex-1 overflow-y-auto px-4 pb-6">
+        <div className="dkn-overlay-results">
           {!hasResults && query.trim() ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-primary-lighter border border-brand-green-100 flex items-center justify-center mb-3">
-                <Search className="w-6 h-6 text-brand-green-700/40" />
-              </div>
-              <p className="text-sm font-bold text-slate-600">Nothing found for &ldquo;{query}&rdquo;</p>
-              <p className="text-xs text-slate-400 mt-1">Try a different keyword or expand your range</p>
+            <div className="dkn-empty-search">
+              <div className="dkn-empty-icon"><Search size={22} /></div>
+              <p className="dkn-empty-title">Nothing found for &ldquo;{query}&rdquo;</p>
+              <p className="dkn-empty-sub">Try a different keyword or expand your range</p>
             </div>
           ) : (
-            <div className="space-y-5 pt-4">
-
-              {/* Shops grid */}
+            <div className="dkn-overlay-sections">
               {showShops && filteredShops.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <Building2 className="w-3 h-3 text-[#0A5C43]/50" />
-                    <span className="text-[10px] font-black text-[#0A5C43]/50 uppercase tracking-widest">Shops</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2.5">
+                  <div className="dkn-section-pill"><Building2 size={11} /> Shops</div>
+                  <div className="dkn-overlay-grid">
                     {filteredShops.map((shop) => (
-                      <ShopSearchCard key={shop.id} shop={shop} query={query} onClick={onClose} />
+                      <Link key={shop.id} href={`/shop/${shop.id}`} onClick={onClose} className="dkn-mini-card">
+                        {PREMIUM_PLANS.includes(shop.plan) && <span className="dkn-pro-badge"><Award size={9} />PRO</span>}
+                        <div className="dkn-mini-img">
+                          {shop.cover_image || shop.image
+                            ? <img src={shop.cover_image || shop.image} alt={shop.name} />
+                            : <span>{CATEGORY_MAPPING[shop.category]?.emoji || '🏪'}</span>}
+                        </div>
+                        <div className="dkn-mini-body">
+                          <p className="dkn-mini-name"><Highlight text={shop.name} query={query} /></p>
+                          <p className="dkn-mini-cat">{shop.category}</p>
+                          <div className="dkn-mini-foot">
+                            {shop.distance && <span className="dkn-mini-dist">{Number(shop.distance).toFixed(1)} km</span>}
+                            {shop.is_open && <span className="dkn-mini-open">Open</span>}
+                          </div>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 </div>
               )}
-
-              {/* Products grid */}
               {showProducts && productResults.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <Package className="w-3 h-3 text-[#0A5C43]/50" />
-                    <span className="text-[10px] font-black text-[#0A5C43]/50 uppercase tracking-widest">Products</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2.5">
+                  <div className="dkn-section-pill"><Package size={11} /> Products</div>
+                  <div className="dkn-overlay-grid">
                     {productResults.map((item, i) => (
-                      <ProductSearchCard key={`${item.shopId}-${item.id || i}`} item={item} idx={i} query={query} onClick={onClose} />
+                      <Link key={`${item.shopId}-${item.id || i}`} href={`/shop/${item.shopId}`} onClick={onClose} className="dkn-mini-card">
+                        <div className="dkn-mini-img">
+                          {item.image ? <img src={item.image} alt={item.name} /> : <Package size={20} className="dkn-pkg-ico" />}
+                        </div>
+                        <div className="dkn-mini-body">
+                          <p className="dkn-mini-name"><Highlight text={item.name} query={query} /></p>
+                          <p className="dkn-mini-cat">{item.shopName}</p>
+                          <div className="dkn-mini-foot">
+                            {item.price && <span className="dkn-mini-price">₹{item.price}</span>}
+                            {item.distance && <span className="dkn-mini-dist">{Number(item.distance).toFixed(1)} km</span>}
+                          </div>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 </div>
               )}
-
             </div>
           )}
         </div>
       </div>
-
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        @keyframes searchIn {
-          from { opacity: 0; transform: translateY(-12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
 
-// ─── SECTION HEADER ──────────────────────────────────────────────────────────
-function SectionHeader({ icon: Icon, iconColor = '#0A5C43', iconBg = '#E8F5EE', title, subtitle, action }) {
-  return (
-    <div className="flex items-start justify-between mb-4">
-      <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: iconBg }}>
-          <Icon className="w-4 h-4" style={{ color: iconColor }} />
-        </div>
-        <div>
-          <h2 className="text-sm font-bold text-slate-800 leading-tight">{title}</h2>
-          {subtitle && <p className="text-xs text-slate-400 mt-0.5 leading-snug">{subtitle}</p>}
-        </div>
-      </div>
-      {action}
-    </div>
-  );
-}
-
-// ─── EMPTY STATE ──────────────────────────────────────────────────────────────
-function EmptyState({ icon: Icon, title, subtitle }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 px-6 text-center rounded-2xl border border-dashed border-brand-green-200 bg-primary-lighter">
-      <div className="w-12 h-12 rounded-xl bg-primary-lighter flex items-center justify-center mb-3">
-        <Icon className="w-5 h-5 text-brand-green-700/40" />
-      </div>
-      <p className="text-sm font-semibold text-slate-600">{title}</p>
-      {subtitle && <p className="text-xs text-slate-400 mt-1 max-w-50 leading-relaxed">{subtitle}</p>}
-    </div>
-  );
-}
-
-// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+/* ─── MAIN PAGE ───────────────────────────────────────────────────────────── */
 export default function HomeDashboard() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [range, setRange] = useState('All');
   const [activeBanner, setActiveBanner] = useState(0);
   const [shopPage, setShopPage] = useState(1);
@@ -398,10 +269,7 @@ export default function HomeDashboard() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const handleSearchChange = (value) => {
-    setSearch(value);
-    setSearchOpen(true);
-  };
+  const handleSearchChange = (value) => { setSearch(value); setSearchOpen(true); };
 
   const { data: bannerResponse = [] } = useQuery({
     queryKey: ['featuredBanners', lat, lon],
@@ -444,421 +312,1013 @@ export default function HomeDashboard() {
     return { filteredShops: filtered, openNowShops: filtered.filter((s) => s.is_open) };
   }, [shops, selectedCategory, range]);
 
+  const banners = bannerResponse.length > 0 ? bannerResponse : [
+    { id: '_d1', banner_type: 'text', title: 'MYDUKAN', subtitle: 'Make local shopping easy', small_text: 'Save time · energy · money', background_color: '#0f3d28' },
+    { id: '_d2', banner_type: 'text', title: 'Live Store Status', subtitle: 'Know if a shop is open before you leave', small_text: 'New on MyDukan', background_color: '#0a3347' },
+    { id: '_d3', banner_type: 'text', title: 'Shop by Category', subtitle: '12+ categories, thousands of local products', small_text: 'Browse Smart', background_color: '#2d1b69' },
+  ];
+
   return (
-    <div
-      className="w-full min-h-screen text-slate-900 pb-24"
-      style={{
-        fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-        background:
-          'radial-gradient(circle at top, rgba(10, 92, 67, 0.18), transparent 24%), radial-gradient(circle at bottom, rgba(66, 176, 126, 0.14), transparent 28%), linear-gradient(180deg, #F8FCF9 0%, #F3FAF6 36%, #EEF8F2 100%)',
-      }}
-    >
-      {searchOpen && (
-        <SearchOverlay
-          query={search}
-          shops={shops}
-          range={range}
-          onClose={() => { setSearchOpen(false); setSearch(''); }}
-          onSubmit={handleSearchChange}
-        />
-      )}
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
 
-      {/* ── HEADER ── */}
-      <header className="sticky top-0 z-50 bg-white/95 border-b border-brand-green-100 backdrop-blur" style={{ boxShadow: '0 1px 3px rgba(10,92,67,0.06)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
+        @font-face {
+          font-family: 'Milker';
+          src: url('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/fredokaone/FredokaOne-Regular.ttf') format('truetype');
+          font-weight: 400;
+          font-display: swap;
+        }
 
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-2">
-              <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition">
-                <Image src="/logo_green.png" alt="Dukand" width={34} height={34} className="rounded-xl shadow-sm" />
-                <span
-                  className="font-extrabold text-lg md:text-xl text-slate-900 tracking-tight"
-                  style={{ fontFamily: "var(--font-outfit), system-ui, sans-serif" }}
-                >
-                  Dukand
-                </span>
-              </Link>
-            </div>
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden ml-1 p-2 rounded-lg text-brand-green-800 bg-primary-lighter border border-brand-green-200"
-              aria-label="Open menu"
-            >
-              <Menu className="w-5 h-5" />
+        :root {
+          --g:        #1a5c3a;
+          --g2:       #206b45;
+          --g3:       #2d9d63;
+          --g-soft:   #eaf5ee;
+          --g-pale:   #f2faf5;
+          --cream:    #fafaf7;
+          --parchment:#f5f3ee;
+          --ink:      #111810;
+          --ink2:     #2e4035;
+          --ink3:     #6b7c71;
+          --ink4:     #9aada2;
+          --gold:     #c9973d;
+          --gold-soft:#fdf4e3;
+          --r:        16px;
+          --r-sm:     10px;
+          --r-lg:     24px;
+          --shadow:   0 1px 12px rgba(17,24,16,0.07);
+          --shadow-md:0 6px 28px rgba(17,24,16,0.12);
+          --shadow-lg:0 16px 56px rgba(17,24,16,0.16);
+          --flogo:    'Milker', 'Fredoka One', 'Nunito', system-ui, sans-serif;
+          --fhead:    'Plus Jakarta Sans', system-ui, sans-serif;
+          --fbody:    'Plus Jakarta Sans', system-ui, sans-serif;
+          --border:   rgba(26,92,58,0.11);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .dkn-root {
+          font-family: var(--fbody);
+          background: var(--cream);
+          color: var(--ink);
+          min-height: 100vh;
+          padding-bottom: 96px;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ── HEADER ── */
+        .dkn-header {
+          position: sticky; top: 0; z-index: 80;
+          background: rgba(250,250,247,0.94);
+          backdrop-filter: blur(24px) saturate(200%);
+          border-bottom: 1px solid var(--border);
+        }
+        .dkn-header-inner {
+          max-width: 1360px; margin: 0 auto;
+          height: 64px; padding: 0 24px;
+          display: flex; align-items: center; gap: 12px;
+        }
+
+        /* Logo */
+        .dkn-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+        .dkn-logo-mark {
+          width: 36px; height: 36px; border-radius: 10px;
+          background: var(--g);
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 3px 10px rgba(26,92,58,0.28);
+          margin-right:-12px;
+          transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .dkn-logo:hover .dkn-logo-mark { transform: scale(1.08) rotate(-4deg); }
+        .dkn-logo-text {
+          font-family: var(--flogo);
+          font-weight: 900;
+          font-size: 25px;
+          color: var(--ink);
+          letter-spacing: 0.02em;
+          -webkit-text-stroke: 0.4px currentColor;
+      
+        }
+        .dkn-logo-text span { color: var(--g); }
+
+        /* Location pill */
+        .dkn-loc-pill {
+          display: flex; align-items: center; gap: 7px;
+          background: var(--g-soft); border: 1px solid var(--border);
+          border-radius: 50px; padding: 7px 13px; cursor: pointer;
+          font-family: var(--fbody); font-size: 12px; font-weight: 500; color: var(--ink2);
+          transition: all 0.18s; max-width: 180px; min-width: 0;
+          letter-spacing: 0.01em; flex-shrink: 0;
+        }
+        .dkn-loc-pill:hover { background: rgba(26,92,58,0.1); border-color: var(--g3); }
+        .dkn-loc-pill span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .dkn-live-dot {
+          width: 6px; height: 6px; border-radius: 50%; background: var(--g3);
+          flex-shrink: 0; animation: dknPulse 2.4s ease-in-out infinite;
+        }
+        @keyframes dknPulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.4; transform:scale(1.5); } }
+
+        /* Search + Download group */
+        .dkn-search-group {
+          flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;
+        }
+        .dkn-search-trigger {
+          flex: 1; min-width: 0;
+          display: flex; align-items: center; gap: 10px;
+          padding: 0 16px; height: 40px;
+          background: white; border: 1.5px solid var(--border);
+          border-radius: 50px; cursor: pointer;
+          font-family: var(--fbody); font-size: 13px; color: var(--ink3); font-weight: 400;
+          transition: all 0.18s; box-shadow: var(--shadow);
+          letter-spacing: 0.01em;
+        }
+        .dkn-search-trigger:hover { border-color: var(--g3); box-shadow: 0 4px 18px rgba(26,92,58,0.1); }
+        .dkn-kbd {
+          margin-left: auto; font-size: 10px; font-weight: 600; color: var(--ink4);
+          background: var(--parchment); border-radius: 6px; padding: 2px 7px;
+          font-family: var(--fbody); border: 1px solid rgba(0,0,0,0.07); flex-shrink: 0;
+        }
+
+        /* Download button — right of search */
+        .dkn-dl-btn {
+          display: flex; align-items: center; gap: 7px;
+          padding: 8px 18px; border-radius: 50px; flex-shrink: 0;
+          background: var(--g); color: white;
+          font-family: var(--fbody); font-size: 12px; font-weight: 600;
+          text-decoration: none; box-shadow: 0 3px 12px rgba(26,92,58,0.3);
+          transition: all 0.18s; letter-spacing: 0.02em; white-space: nowrap;
+        }
+        .dkn-dl-btn:hover { background: #154e30; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,92,58,0.38); }
+
+        /* Nav links — right side */
+        .dkn-header-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+        .dkn-nav-link {
+          font-family: var(--fbody); font-size: 12px; font-weight: 500; color: var(--ink3);
+          text-decoration: none; padding: 7px 10px; border-radius: 50px;
+          transition: all 0.15s; letter-spacing: 0.01em; white-space: nowrap;
+        }
+        .dkn-nav-link:hover { background: var(--g-soft); color: var(--ink); }
+        .dkn-signup-btn {
+          padding: 8px 16px; background: transparent; color: var(--g);
+          font-family: var(--fbody); font-size: 12px; font-weight: 700;
+          border-radius: 50px; text-decoration: none; border: 1.5px solid var(--g);
+          transition: all 0.18s; letter-spacing: 0.02em; white-space: nowrap;
+        }
+        .dkn-signup-btn:hover { background: var(--g); color: white; }
+
+        /* ── MOBILE HEADER ── */
+        /* Row 1: logo + location + download (always visible on mobile) */
+        .dkn-mobile-top {
+          display: none;
+          padding: 10px 14px 8px;
+          align-items: center; gap: 8px;
+          background: rgba(250,250,247,0.94);
+        }
+        /* Row 2: search bar */
+        .dkn-mobile-search-row {
+          display: none;
+          padding: 0 14px 10px;
+          background: rgba(250,250,247,0.94);
+        }
+        .dkn-mob-search {
+          width: 100%; display: flex; align-items: center; gap: 8px;
+          background: white; border: 1.5px solid var(--border);
+          border-radius: 50px; padding: 0 14px; height: 40px; cursor: pointer;
+          font-family: var(--fbody); font-size: 13px; color: var(--ink3); box-shadow: var(--shadow);
+          transition: border-color 0.15s;
+        }
+        .dkn-mob-search:hover { border-color: var(--g3); }
+        .dkn-mob-loc {
+          display: flex; align-items: center; gap: 6px;
+          background: var(--g-soft); border: 1px solid var(--border);
+          border-radius: 50px; padding: 8px 12px; cursor: pointer;
+          font-family: var(--fbody); font-size: 12px; font-weight: 500; color: var(--ink2);
+          flex-shrink: 0; flex: 1; min-width: 0; transition: all 0.15s;
+        }
+        .dkn-mob-loc span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .dkn-mob-dl-btn {
+          flex-shrink: 0;
+          display: flex; align-items: center; gap: 5px;
+          padding: 8px 14px; border-radius: 50px;
+          background: var(--g); color: white;
+          font-family: var(--fbody); font-size: 12px; font-weight: 600;
+          text-decoration: none; box-shadow: 0 2px 8px rgba(26,92,58,0.22);
+          white-space: nowrap;
+        }
+
+        @media (max-width: 767px) {
+          .dkn-loc-pill,
+          .dkn-search-group,
+          .dkn-header-actions { display: none !important; }
+          .dkn-mobile-top { display: flex !important; }
+          .dkn-mobile-search-row { display: block !important; }
+          .dkn-header-inner { height: auto; padding: 0; flex-direction: column; align-items: stretch; gap: 0; }
+          .dkn-header-inner > .dkn-logo { display: none; } /* logo shown in mobile-top */
+        }
+
+        /* Denied banner */
+        .dkn-denied {
+          background: #fffbeb; border-bottom: 1px solid #fde68a;
+          padding: 10px 24px; display: flex; align-items: center; gap: 10px;
+        }
+        .dkn-denied p { font-family: var(--fbody); font-size: 12px; font-weight: 500; color: #78350f; flex: 1; }
+        .dkn-denied button { font-family: var(--fbody); font-size: 12px; font-weight: 700; color: #92400e; background: none; border: none; cursor: pointer; text-decoration: underline; }
+
+        /* Content */
+        .dkn-content { max-width: 1360px; margin: 0 auto; }
+
+        /* ── HERO DESKTOP ── */
+        .dkn-hero-desktop {
+          display: none;
+          margin: 20px 24px 0;
+          border-radius: 32px;
+          overflow: hidden;
+          background: var(--g);
+          position: relative;
+        }
+        .dkn-hero-desktop::before {
+          content: '';
+          position: absolute; inset: 0; z-index: 1;
+          background-image:
+            radial-gradient(ellipse at 80% -10%, rgba(45,157,99,0.55) 0%, transparent 50%),
+            radial-gradient(ellipse at 10% 110%, rgba(10,40,25,0.6) 0%, transparent 45%);
+          pointer-events: none;
+        }
+        .dkn-hero-content {
+          position: relative; z-index: 2;
+          display: grid;
+          grid-template-columns: 1fr 520px;
+          grid-template-rows: 1fr auto;
+        }
+        .dkn-hero-left {
+          padding: 52px 40px 48px 52px;
+          display: flex; flex-direction: column; justify-content: center;
+          grid-row: 1;
+        }
+        .dkn-hero-eyebrow {
+          display: inline-flex; align-items: center; gap: 8px;
+          font-family: var(--fbody); font-size: 11px; font-weight: 600;
+          color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.14em;
+          margin-bottom: 18px;
+        }
+        .dkn-hero-eyebrow-dot {
+          width: 6px; height: 6px; border-radius: 50%; background: #6ee7a8;
+          animation: dknPulse 2.4s ease-in-out infinite; flex-shrink: 0;
+        }
+        .dkn-hero-h1 {
+          font-family: var(--fhead);
+          font-weight: 800;
+          font-size: clamp(36px, 3.6vw, 56px);
+          line-height: 1.06;
+          color: white;
+          letter-spacing: -0.035em;
+          margin-bottom: 16px;
+        }
+        .dkn-hero-h1 em { font-style: italic; color: #7ef5b8; font-weight: 600; }
+        .dkn-hero-p {
+          font-family: var(--fbody);
+          font-size: 15px;
+          color: rgba(255,255,255,0.58);
+          line-height: 1.7;
+          max-width: 380px;
+          margin-bottom: 32px;
+        }
+        .dkn-hero-cta {
+          display: inline-flex; align-items: center; gap: 10px;
+          background: white; color: var(--g);
+          border-radius: 50px; padding: 14px 26px; width: fit-content;
+          font-family: var(--fbody); font-size: 14px; font-weight: 700;
+          text-decoration: none; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+          transition: all 0.22s; letter-spacing: 0.01em; margin-bottom: 28px;
+        }
+        .dkn-hero-cta:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(0,0,0,0.3); }
+        .dkn-hero-feats { display: flex; flex-direction: column; gap: 9px; }
+        .dkn-hero-feat {
+          display: flex; align-items: center; gap: 10px;
+          font-family: var(--fbody); font-size: 13px; font-weight: 400;
+          color: rgba(255,255,255,0.6);
+        }
+        .dkn-hero-feat::before {
+          content: ''; width: 5px; height: 5px; border-radius: 50%;
+          background: #6ee7a8; flex-shrink: 0;
+        }
+        .dkn-hero-right {
+          position: relative; grid-row: 1;
+          display: flex; align-items: flex-end; justify-content: center;
+          min-height: 420px; overflow: visible;
+        }
+        .dkn-hero-img-wrap {
+          position: absolute; bottom: 0; left: 0; right: 50px; top: -20px;
+        }
+        .dkn-hero-img-wrap img { width: 100%; height: 100%; object-fit: contain; object-position: bottom center; }
+        .dkn-hero-floater {
+          position: absolute; z-index: 10;
+          background: white; border-radius: 14px; padding: 9px 14px;
+          font-family: var(--fbody); font-size: 12px; font-weight: 600; color: var(--ink);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
+          display: flex; align-items: center; gap: 8px; white-space: nowrap;
+          animation: dknFloat 4s ease-in-out infinite;
+        }
+        .dkn-hero-floater.f1 { top: 36px; left: -20px; animation-delay: 0s; }
+        .dkn-hero-floater.f2 { top: 90px; right: -10px; background: #0c3522; color: rgba(255,255,255,0.88); animation-delay: 1.4s; }
+        .dkn-hero-floater.f3 { bottom: 80px; right: -10px; animation-delay: 0.7s; }
+        @keyframes dknFloat { 0%,100%{ transform:translateY(0px); } 50%{ transform:translateY(-6px); } }
+        .dkn-floater-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: dknPulse 2.4s ease-in-out infinite; flex-shrink: 0; }
+        .dkn-floater-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--g-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .dkn-hero-stat-row {
+          grid-column: 1 / -1; border-top: 1px solid rgba(255,255,255,0.09);
+          display: grid; grid-template-columns: repeat(3,1fr);
+        }
+        .dkn-hero-stat {
+          padding: 18px 52px; border-right: 1px solid rgba(255,255,255,0.09);
+          display: flex; flex-direction: column; gap: 3px;
+        }
+        .dkn-hero-stat:last-child { border-right: none; }
+        .dkn-hero-stat-val { font-family: var(--fhead); font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.03em; }
+        .dkn-hero-stat-lbl { font-family: var(--fbody); font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; }
+
+        @media (min-width: 768px) { .dkn-hero-desktop { display: block; } }
+        @media (min-width: 768px) and (max-width: 1100px) {
+          .dkn-hero-content { grid-template-columns: 1fr 380px; }
+          .dkn-hero-left { padding: 40px 32px 40px 36px; }
+          .dkn-hero-right { min-height: 360px; }
+        }
+
+        /* ── HERO MOBILE ── */
+        .dkn-hero-mobile {
+          margin: 12px 14px 0; border-radius: 22px;
+          background: var(--g); padding: 26px 22px 0;
+          overflow: hidden; position: relative;
+        }
+        .dkn-hero-mobile::before {
+          content: ''; position: absolute; inset: 0;
+          background: radial-gradient(ellipse at 80% 0%, rgba(45,157,99,0.4) 0%, transparent 55%);
+          pointer-events: none;
+        }
+        .dkn-mob-eyebrow {
+          display: inline-flex; align-items: center; gap: 6px;
+          font-family: var(--fbody); font-size: 10px; font-weight: 600;
+          color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.12em;
+          margin-bottom: 12px; position: relative;
+        }
+        .dkn-mob-h1 { font-family: var(--fhead); font-weight: 800; font-size: 30px; line-height: 1.08; color: white; letter-spacing: -0.03em; margin-bottom: 8px; position: relative; }
+        .dkn-mob-h1 em { font-style: italic; color: #8ef5c0; font-weight: 600; }
+        .dkn-mob-p { font-family: var(--fbody); font-size: 13px; color: rgba(255,255,255,0.58); line-height: 1.65; margin-bottom: 20px; position: relative; }
+        .dkn-mob-cta {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: white; color: var(--g); border-radius: 50px;
+          padding: 11px 20px; font-family: var(--fbody); font-size: 13px; font-weight: 700;
+          text-decoration: none; box-shadow: 0 5px 18px rgba(0,0,0,0.18);
+          margin-bottom: 24px; transition: transform 0.15s; position: relative; letter-spacing: 0.01em;
+        }
+        .dkn-mob-cta:hover { transform: translateY(-1px); }
+        .dkn-mob-stats { display: flex; border-top: 1px solid rgba(255,255,255,0.08); margin: 0 -22px; }
+        .dkn-mob-stat { flex: 1; padding: 12px 0; text-align: center; border-right: 1px solid rgba(255,255,255,0.08); }
+        .dkn-mob-stat:last-child { border-right: none; }
+        .dkn-mob-stat-val { font-family: var(--fhead); font-size: 16px; font-weight: 700; color: white; letter-spacing: -0.02em; }
+        .dkn-mob-stat-lbl { font-family: var(--fbody); font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+        @media (min-width: 768px) { .dkn-hero-mobile { display: none; } }
+
+        /* ── TOOLBAR ── */
+        .dkn-toolbar {
+          position: sticky; top: 64px; z-index: 70;
+          background: rgba(250,250,247,0.96);
+          backdrop-filter: blur(20px) saturate(180%);
+          border-bottom: 1px solid var(--border);
+        }
+        /* Mobile toolbar: top shifts because mobile header is taller */
+        @media (max-width: 767px) {
+          .dkn-toolbar { top: 112px; }
+        }
+
+        /* ── RANGE BAR ── */
+        .dkn-range-bar {
+          padding: 10px 24px; display: flex; align-items: center; gap: 8px;
+          overflow-x: auto; border-bottom: 1px solid rgba(26,92,58,0.06);
+        }
+        .dkn-range-bar::-webkit-scrollbar { display: none; }
+        .dkn-range-label {
+          font-family: var(--fbody); font-size: 10px; font-weight: 600;
+          color: var(--ink4); text-transform: uppercase; letter-spacing: 0.12em; flex-shrink: 0;
+        }
+        .dkn-range-chip {
+          flex-shrink: 0; padding: 5px 13px; border-radius: 50px;
+          font-family: var(--fbody); font-size: 12px; font-weight: 600;
+          border: 1.5px solid var(--border); background: white; color: var(--ink3);
+          cursor: pointer; transition: all 0.15s; letter-spacing: 0.01em;
+        }
+        .dkn-range-chip:hover { border-color: var(--g3); color: var(--g); }
+        .dkn-range-chip.active { background: var(--g); color: white; border-color: var(--g); box-shadow: 0 2px 10px rgba(26,92,58,0.25); }
+
+        /* Mobile range: pill-style, compact, full-width scroll */
+        @media (max-width: 767px) {
+          .dkn-range-bar { padding: 8px 14px; gap: 6px; }
+          .dkn-range-label { font-size: 9px; }
+          .dkn-range-chip { padding: 5px 11px; font-size: 11px; }
+        }
+
+        /* ── CATEGORIES ── */
+        .dkn-cats { padding: 9px 24px; display: flex; gap: 6px; overflow-x: auto; }
+        .dkn-cats::-webkit-scrollbar { display: none; }
+        .dkn-cat {
+          flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+          padding: 6px 13px; border-radius: 50px;
+          font-family: var(--fbody); font-size: 12px; font-weight: 500;
+          border: 1.5px solid var(--border); background: white; color: var(--ink2);
+          cursor: pointer; transition: all 0.15s; white-space: nowrap; letter-spacing: 0.01em;
+        }
+        .dkn-cat:hover { border-color: var(--g3); color: var(--g); background: var(--g-soft); }
+        .dkn-cat.active { color: white; border-color: transparent; box-shadow: 0 2px 10px rgba(26,92,58,0.22); }
+        .dkn-cat-emoji { font-size: 13px; line-height: 1; }
+
+        @media (max-width: 767px) {
+          .dkn-cats { padding: 8px 14px; gap: 5px; }
+          .dkn-cat { padding: 5px 11px; font-size: 11px; }
+          .dkn-cat-emoji { font-size: 12px; }
+        }
+
+        /* ── PAGE BODY ── */
+        .dkn-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 32px; }
+        @media (max-width: 767px) { .dkn-body { padding: 16px 14px; gap: 26px; } }
+
+        /* ── BANNER ── */
+        .dkn-banner-wrap { border-radius: 20px; overflow: hidden; position: relative; box-shadow: var(--shadow-md); }
+        .dkn-banner-slide {
+          padding: 24px 28px 28px; color: white; position: relative; overflow: hidden; display: none;
+        }
+        .dkn-banner-slide.active { display: block; animation: dknSlideIn 0.45s cubic-bezier(0.16,1,0.3,1); }
+        @keyframes dknSlideIn { from{ opacity:0; transform:translateX(12px); } to{ opacity:1; transform:translateX(0); } }
+        .dkn-banner-slide::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 85% 15%, rgba(255,255,255,0.07) 0%, transparent 50%); pointer-events: none; }
+        .dkn-banner-eyebrow { font-family: var(--fbody); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; opacity: 0.5; margin-bottom: 7px; position: relative; }
+        .dkn-banner-title { font-family: var(--fhead); font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 5px; position: relative; }
+        .dkn-banner-sub { font-family: var(--fbody); font-size: 13px; opacity: 0.62; position: relative; line-height: 1.5; }
+        .dkn-banner-img-slide { display: none; }
+        .dkn-banner-img-slide.active { display: block; }
+        .dkn-banner-img-slide img { width: 100%; height: 180px; object-fit: cover; display: block; }
+        .dkn-bdots { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; z-index: 10; }
+        .dkn-bdot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.3); cursor: pointer; transition: all 0.28s ease; border: none; }
+        .dkn-bdot.active { width: 18px; border-radius: 50px; background: white; }
+
+        /* ── SECTION HEADER ── */
+        .dkn-section-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+        .dkn-section-left { display: flex; align-items: flex-start; gap: 12px; }
+        .dkn-section-icon-wrap { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+        .dkn-section-title { font-family: var(--fhead); font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; }
+        .dkn-section-sub { font-family: var(--fbody); font-size: 11px; color: var(--ink3); margin-top: 2px; line-height: 1.4; }
+        .dkn-see-all { font-family: var(--fbody); font-size: 12px; font-weight: 600; color: var(--g); background: transparent; border: 1.5px solid var(--border); border-radius: 50px; padding: 5px 13px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; letter-spacing: 0.01em; display: flex; align-items: center; gap: 5px; }
+        .dkn-see-all:hover { background: var(--g-soft); border-color: var(--g3); }
+
+        /* ── HORIZONTAL SHOP CARDS ── */
+        .dkn-hscroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+        .dkn-hscroll::-webkit-scrollbar { display: none; }
+        .dkn-shop-card { flex-shrink: 0; width: 164px; border-radius: 18px; background: white; border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); box-shadow: var(--shadow); text-decoration: none; display: block; }
+        .dkn-shop-card:hover { transform: translateY(-4px) scale(1.01); box-shadow: var(--shadow-md); }
+        .dkn-card-img { width: 100%; height: 96px; background: var(--g-soft); display: flex; align-items: center; justify-content: center; font-size: 32px; position: relative; overflow: hidden; }
+        .dkn-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.35s ease; }
+        .dkn-shop-card:hover .dkn-card-img img { transform: scale(1.07); }
+        .dkn-open-pill { position: absolute; bottom: 7px; left: 7px; background: white; border-radius: 50px; padding: 3px 8px; font-family: var(--fbody); font-size: 9px; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        .dkn-open-dot { width: 5px; height: 5px; border-radius: 50%; background: #22c55e; animation: dknPulse 2.4s ease-in-out infinite; }
+        .dkn-pro-badge { position: absolute; top: 7px; right: 7px; z-index: 2; background: var(--gold); color: white; border-radius: 6px; padding: 3px 7px; font-family: var(--fbody); font-size: 8px; font-weight: 700; letter-spacing: 0.06em; display: flex; align-items: center; gap: 3px; }
+        .dkn-card-body { padding: 11px 12px 13px; }
+        .dkn-card-name { font-family: var(--fhead); font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+        .dkn-card-cat { font-family: var(--fbody); font-size: 11px; color: var(--ink3); margin-top: 2px; }
+        .dkn-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; }
+        .dkn-dist-pill { font-family: var(--fbody); font-size: 11px; font-weight: 700; color: var(--g); background: var(--g-soft); padding: 3px 8px; border-radius: 50px; }
+
+        /* ── SHOP GRID ── */
+        .dkn-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+        @media (min-width: 560px) { .dkn-grid { grid-template-columns: repeat(3,1fr); } }
+        @media (min-width: 1024px) { .dkn-grid { grid-template-columns: repeat(4,1fr); gap: 12px; } }
+        .dkn-grid-card { border-radius: 16px; background: white; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); text-decoration: none; display: block; position: relative; }
+        .dkn-grid-card:hover { transform: translateY(-3px) scale(1.01); box-shadow: var(--shadow-md); }
+        .dkn-gc-img { width: 100%; height: 80px; background: var(--g-soft); display: flex; align-items: center; justify-content: center; font-size: 28px; position: relative; overflow: hidden; }
+        .dkn-gc-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.35s ease; }
+        .dkn-grid-card:hover .dkn-gc-img img { transform: scale(1.07); }
+        .dkn-gc-body { padding: 10px 11px 12px; }
+        .dkn-gc-name { font-family: var(--fhead); font-size: 12px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }
+        .dkn-gc-cat { font-family: var(--fbody); font-size: 10px; color: var(--ink3); margin-top: 2px; }
+        .dkn-gc-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+        .dkn-gc-dist { font-family: var(--fbody); font-size: 10px; font-weight: 700; color: var(--g); }
+        .dkn-gc-open { font-family: var(--fbody); font-size: 9px; font-weight: 700; color: #166534; background: #dcfce7; padding: 3px 7px; border-radius: 50px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .dkn-gc-closed { font-family: var(--fbody); font-size: 9px; font-weight: 700; color: #92400e; background: #fef3c7; padding: 3px 7px; border-radius: 50px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        /* ── LOCATION CTA ── */
+        .dkn-loc-cta { background: white; border-radius: 20px; padding: 40px 28px; text-align: center; border: 1px solid var(--border); box-shadow: var(--shadow); }
+        .dkn-loc-cta-icon { width: 56px; height: 56px; border-radius: 16px; background: var(--g-soft); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; }
+        .dkn-loc-cta h3 { font-family: var(--fhead); font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 8px; }
+        .dkn-loc-cta p { font-family: var(--fbody); font-size: 13px; color: var(--ink3); line-height: 1.65; max-width: 250px; margin: 0 auto 22px; }
+        .dkn-loc-cta-btn { display: inline-flex; align-items: center; gap: 9px; background: var(--g); color: white; border: none; border-radius: 50px; padding: 12px 26px; font-family: var(--fbody); font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 18px rgba(26,92,58,0.28); transition: all 0.2s; letter-spacing: 0.01em; }
+        .dkn-loc-cta-btn:hover { background: #154e30; transform: translateY(-1px); box-shadow: 0 8px 26px rgba(26,92,58,0.34); }
+        .dkn-loc-denied-msg { font-family: var(--fbody); font-size: 12px; color: #92400e; font-weight: 500; margin-top: 12px; }
+
+        /* ── STATES ── */
+        .dkn-skeletons { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+        @media (min-width: 560px) { .dkn-skeletons { grid-template-columns: repeat(3,1fr); } }
+        @media (min-width: 1024px) { .dkn-skeletons { grid-template-columns: repeat(4,1fr); } }
+        .dkn-requesting { background: white; border-radius: 18px; padding: 48px 20px; text-align: center; border: 1px solid var(--border); box-shadow: var(--shadow); }
+        .dkn-requesting p { font-family: var(--fbody); font-size: 13px; color: var(--ink3); margin-top: 12px; }
+        .dkn-error { background: #fef2f2; border: 1px solid #fecaca; border-radius: 16px; padding: 32px 20px; text-align: center; }
+        .dkn-error p { font-family: var(--fbody); font-size: 13px; font-weight: 700; color: #b91c1c; margin-top: 8px; }
+        .dkn-error span { font-family: var(--fbody); font-size: 12px; color: #f87171; display: block; margin-top: 4px; }
+        .dkn-empty { background: white; border: 1.5px dashed rgba(26,92,58,0.16); border-radius: 18px; padding: 40px 20px; text-align: center; }
+        .dkn-empty-icon { width: 46px; height: 46px; background: var(--g-soft); border-radius: 13px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+        .dkn-empty p { font-family: var(--fhead); font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+        .dkn-empty span { font-family: var(--fbody); font-size: 12px; color: var(--ink3); margin-top: 4px; display: block; }
+
+        /* ── LOAD MORE ── */
+        .dkn-loadmore { text-align: center; padding-top: 8px; }
+        .dkn-loadmore button { background: white; border: 1.5px solid var(--border); border-radius: 50px; padding: 11px 30px; font-family: var(--fbody); font-size: 13px; font-weight: 600; color: var(--ink2); cursor: pointer; box-shadow: var(--shadow); transition: all 0.18s; letter-spacing: 0.01em; }
+        .dkn-loadmore button:hover { border-color: var(--g3); color: var(--g); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+        /* ── SEARCH OVERLAY ── */
+        .dkn-overlay-root { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; }
+        .dkn-overlay-backdrop { position: absolute; inset: 0; background: rgba(10,15,10,0.5); backdrop-filter: blur(8px); }
+        .dkn-overlay-panel { position: relative; z-index: 1; width: 100%; max-width: 600px; margin: 0 auto; background: white; border-radius: 0 0 24px 24px; display: flex; flex-direction: column; max-height: 90vh; overflow: hidden; box-shadow: var(--shadow-lg); animation: dknSearchIn 0.22s cubic-bezier(0.16,1,0.3,1); }
+        @keyframes dknSearchIn { from{ opacity:0; transform:translateY(-16px); } to{ opacity:1; transform:translateY(0); } }
+        .dkn-overlay-head { padding: 16px 16px 0; background: white; }
+        .dkn-search-row { display: flex; align-items: center; gap: 10px; }
+        .dkn-search-field { flex: 1; display: flex; align-items: center; gap: 10px; border: 2px solid var(--border); border-radius: 12px; padding: 10px 13px; background: var(--g-pale); transition: all 0.15s; }
+        .dkn-search-field:focus-within { border-color: var(--g3); background: white; box-shadow: 0 0 0 3px rgba(26,92,58,0.07); }
+        .dkn-search-ico { color: var(--g); flex-shrink: 0; }
+        .dkn-search-input { flex: 1; background: transparent; border: none; outline: none; font-family: var(--fbody); font-size: 14px; font-weight: 400; color: var(--ink); }
+        .dkn-search-input::placeholder { color: var(--ink4); }
+        .dkn-clear-btn { background: none; border: none; cursor: pointer; color: var(--ink3); display: flex; padding: 0; transition: color 0.15s; }
+        .dkn-clear-btn:hover { color: var(--ink); }
+        .dkn-overlay-close { width: 42px; height: 42px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--g-soft); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--g); flex-shrink: 0; transition: all 0.15s; }
+        .dkn-overlay-close:hover { background: rgba(26,92,58,0.12); }
+        .dkn-result-count { font-family: var(--fbody); font-size: 11px; color: var(--ink3); margin: 10px 2px 0; font-weight: 500; }
+        .dkn-tabs { display: flex; gap: 2px; margin-top: 12px; }
+        .dkn-tab { padding: 8px 13px; font-family: var(--fbody); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border: none; background: none; color: var(--ink3); cursor: pointer; border-radius: 8px 8px 0 0; transition: all 0.15s; border-bottom: 2px solid transparent; }
+        .dkn-tab:hover { color: var(--ink2); background: var(--g-soft); }
+        .dkn-tab.active { color: var(--g); border-bottom-color: var(--g); background: var(--g-soft); }
+        .dkn-tab-line { height: 1px; background: var(--border); }
+        .dkn-overlay-results { flex: 1; overflow-y: auto; padding: 0 16px 24px; }
+        .dkn-overlay-sections { padding-top: 16px; display: flex; flex-direction: column; gap: 20px; }
+        .dkn-section-pill { display: inline-flex; align-items: center; gap: 5px; font-family: var(--fbody); font-size: 10px; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+        .dkn-overlay-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+        .dkn-empty-search { display: flex; flex-direction: column; align-items: center; padding: 48px 0; text-align: center; }
+        .dkn-empty-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--g-soft); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: var(--g); }
+        .dkn-empty-title { font-family: var(--fhead); font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+        .dkn-empty-sub { font-family: var(--fbody); font-size: 12px; color: var(--ink3); margin-top: 5px; }
+        .dkn-mini-card { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: white; text-decoration: none; display: block; transition: all 0.18s; position: relative; }
+        .dkn-mini-card:hover { border-color: var(--g3); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .dkn-mini-img { width: 100%; height: 60px; background: var(--g-soft); display: flex; align-items: center; justify-content: center; font-size: 22px; overflow: hidden; position: relative; }
+        .dkn-mini-img img { width: 100%; height: 100%; object-fit: cover; }
+        .dkn-pkg-ico { color: rgba(26,92,58,0.22); }
+        .dkn-mini-body { padding: 7px 8px 9px; }
+        .dkn-mini-name { font-family: var(--fhead); font-size: 11px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+        .dkn-mini-cat { font-family: var(--fbody); font-size: 9px; color: var(--ink3); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dkn-mini-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
+        .dkn-mini-dist { font-family: var(--fbody); font-size: 9px; font-weight: 700; color: var(--g); }
+        .dkn-mini-open { font-family: var(--fbody); font-size: 8px; font-weight: 700; color: #166534; background: #dcfce7; padding: 2px 5px; border-radius: 50px; }
+        .dkn-mini-price { font-family: var(--fbody); font-size: 11px; font-weight: 700; color: var(--g); }
+
+        /* Misc */
+        .dkn-mark { background: #bbf7d0; color: #14532d; border-radius: 3px; padding: 0 2px; font-style: normal; }
+        .dkn-spin { animation: dknSpin 0.9s linear infinite; }
+        @keyframes dknSpin { to{ transform:rotate(360deg); } }
+      `}</style>
+
+      <div className="dkn-root">
+        {searchOpen && (
+          <SearchOverlay
+            query={search}
+            shops={shops}
+            range={range}
+            onClose={() => { setSearchOpen(false); setSearch(''); }}
+            onSubmit={handleSearchChange}
+          />
+        )}
+
+        {/* ── HEADER ── */}
+        <header className="dkn-header">
+          {/* ── DESKTOP HEADER ROW ── */}
+          <div className="dkn-header-inner">
+            <Link href="/" className="dkn-logo">
+              <div className="dkn-logo-mark" style={{ width: 36, height: 36, minWidth: 36, minHeight: 36, background: 'var(--g-pale)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(10,92,67,0.10)' }}>
+                <Image src="/logo_green.png" alt="MYDUKAN" width={28} height={28} style={{ width: 28, height: 28 }} />
+              </div>
+              <span className="dkn-logo-text" style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.03em', marginLeft: 8 }}>MY<span style={{ color: 'var(--g)' }}>DUKAN</span></span>
+            </Link>
+
+            <button className="dkn-loc-pill" onClick={requestLocation}>
+              {status === 'requesting'
+                ? <Loader2 size={12} className="dkn-spin" style={{ color: 'var(--g)' }} />
+                : <span className="dkn-live-dot" />}
+              <span>{locLabel}</span>
+              <ChevronDown size={11} style={{ color: 'var(--ink4)', flexShrink: 0 }} />
             </button>
+
+            {/* Search + Download grouped together */}
+            <div className="dkn-search-group">
+              <button className="dkn-search-trigger" onClick={() => setSearchOpen(true)}>
+                <Search size={14} style={{ color: 'var(--ink3)' }} />
+                Search shops, products…
+                <span className="dkn-kbd">⌘K</span>
+              </button>
+              <a
+                href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
+                target="_blank" rel="noopener noreferrer"
+                className="dkn-dl-btn"
+              >
+                <Download size={13} /> Download App
+              </a>
+            </div>
+
+            {/* Auth links on the far right */}
+            <div className="dkn-header-actions">
+              <Link href="/customer/login" className="dkn-nav-link">Customer</Link>
+              <Link href="/merchant/login" className="dkn-nav-link">Merchant</Link>
+              <Link href="/customer/signup" className="dkn-signup-btn">Sign Up</Link>
+            </div>
           </div>
 
-          <button
-            onClick={requestLocation}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 shrink-0 transition max-w-50 hover:bg-primary-lighter border border-brand-green-100 bg-white"
-          >
-            {status === 'requesting'
-              ? <Loader2 className="w-3.5 h-3.5 text-[#0A5C43] animate-spin shrink-0" />
-              : <MapPin className="w-3.5 h-3.5 text-[#0A5C43] shrink-0" />}
-            <span className="truncate">{locLabel}</span>
-            <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 ml-0.5" />
-          </button>
+          {/* ── MOBILE HEADER ROW 1: Logo + Location + Download ── */}
+          <div className="dkn-mobile-top">
+            <Link href="/" className="dkn-logo" style={{ flexShrink: 0 }}>
+              <div style={{ width: 32, height: 32, minWidth: 32, minHeight: 32, background: 'var(--g-pale)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Image src="/logo_green.png" alt="MYDUKAN" width={24} height={24} style={{ width: 24, height: 24 }} />
+              </div>
+              <span className="dkn-logo-text" style={{ fontSize: 17, fontWeight: 900, letterSpacing: '-0.02em', marginLeft: 6 }}>MY<span style={{ color: 'var(--g)' }}>DUKAN</span></span>
+            </Link>
 
-          {/* Search trigger — desktop */}
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="hidden md:flex flex-1 items-center gap-2.5 max-w-md px-4 py-2.5 bg-primary-lighter border border-brand-green-200 rounded-xl text-sm text-slate-500 font-medium hover:bg-brand-green-50 hover:border-brand-green-300 transition text-left"
-          >
-            <Search className="w-4 h-4 shrink-0" />
-            Search shops, products…
-            <span className="ml-auto text-[10px] font-bold text-slate-300 border border-slate-200 rounded px-1.5 py-0.5">⌘K</span>
-          </button>
+            <button className="dkn-mob-loc" onClick={requestLocation}>
+              {status === 'requesting'
+                ? <Loader2 size={11} className="dkn-spin" style={{ color: 'var(--g)' }} />
+                : <span className="dkn-live-dot" />}
+              <span>{hasCoords ? locLabel : 'Set location'}</span>
+              <ChevronDown size={10} style={{ color: 'var(--ink4)', flexShrink: 0, marginLeft: 'auto' }} />
+            </button>
 
-          <div className="ml-auto flex items-center gap-2 shrink-0">
             <a
               href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-sm"
+              target="_blank" rel="noopener noreferrer"
+              className="dkn-mob-dl-btn"
             >
-              <MapPin className="w-3.5 h-3.5" />
-              Download app
+              <Download size={13} /> App
             </a>
-            <Link href="/customer/login" className="hidden md:inline text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-brand-green-100">Customer</Link>
-            <Link href="/merchant/login" className="hidden md:inline text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-brand-green-100">Merchant</Link>
-            <Link href="/customer/signup" className="hidden md:inline px-4 py-2 bg-brand-green-700 hover:bg-brand-green-800 active:bg-brand-green-900 text-white text-xs font-bold rounded-xl transition shadow-sm">Sign Up</Link>
           </div>
-        </div>
 
-        {/* Mobile: search + location row */}
-        <div className="md:hidden px-3 pb-3 pt-1 flex items-center gap-2 bg-white">
-          <button
-            onClick={requestLocation}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary-lighter border border-brand-green-200 text-sm font-medium text-slate-600 shrink-0 max-w-27.5 transition"
-          >
-            {status === 'requesting'
-              ? <Loader2 className="w-3 h-3 text-[#0A5C43] animate-spin shrink-0" />
-              : <MapPin className="w-3 h-3 text-[#0A5C43] shrink-0" />}
-            <span className="truncate">{hasCoords ? locLabel : 'Location'}</span>
-          </button>
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="flex-1 flex items-center gap-2 px-3 py-2.5 bg-primary-lighter border border-brand-green-200 rounded-xl text-sm text-slate-500 font-medium"
-          >
-            <Search className="w-3.5 h-3.5 shrink-0" />
-            Search…
-          </button>
-        </div>
-      </header>
-
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-60 md:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-72 bg-white border-l border-brand-green-100 px-4 py-5 shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <Image src="/logo_green.png" alt="Dukand" width={30} height={30} className="rounded-lg" />
-                <div>
-                  <div className="font-bold text-slate-900">Dukand</div>
-                  <div className="text-[10px] text-slate-400">Local shops near you</div>
-                </div>
-              </div>
-              <button onClick={() => setMobileMenuOpen(false)} className="px-2 py-1 rounded-lg text-xs font-semibold bg-primary-lighter text-brand-green-800">Close</button>
-            </div>
-            <div className="space-y-2">
-              <a href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp" target="_blank" rel="noopener noreferrer" className="btn-primary w-full inline-flex items-center justify-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Download app
-              </a>
-              <Link href="/customer/signup" className="btn-secondary w-full inline-flex items-center justify-center">Sign up</Link>
-              <Link href="/customer/login" className="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-brand-green-100 text-sm font-semibold text-slate-700">Customer login</Link>
-              <Link href="/merchant/login" className="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-brand-green-100 text-sm font-semibold text-slate-700">Merchant login</Link>
-            </div>
+          {/* ── MOBILE HEADER ROW 2: Search ── */}
+          <div className="dkn-mobile-search-row">
+            <button className="dkn-mob-search" onClick={() => setSearchOpen(true)}>
+              <Search size={14} style={{ color: 'var(--ink3)' }} />
+              <span style={{ color: 'var(--ink3)', fontSize: 13 }}>Search shops, products…</span>
+            </button>
           </div>
-        </div>
-      )}
+        </header>
 
-      {/* Location denied banner */}
-      {status === 'denied' && (
-        <div className="bg-amber-50 border-b border-amber-100 px-4 py-2.5 flex items-center gap-2.5">
-          <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-          <p className="text-xs font-medium text-amber-800 flex-1">Location blocked — enable it in your browser settings.</p>
-          <button onClick={requestLocation} className="text-xs font-bold text-amber-600 underline shrink-0">Retry</button>
-        </div>
-      )}
+        {status === 'denied' && (
+          <div className="dkn-denied">
+            <AlertCircle size={14} style={{ color: '#d97706', flexShrink: 0 }} />
+            <p>Location blocked — enable it in your browser settings.</p>
+            <button onClick={requestLocation}>Retry</button>
+          </div>
+        )}
 
-      <div className="max-w-7xl mx-auto">
+        <div className="dkn-content">
 
-        {/* ── HERO — desktop ── */}
-        <div
-          className="hidden md:grid grid-cols-2 gap-0 border-b border-brand-green-100 overflow-hidden rounded-b-3xl"
-          style={{
-            background:
-              'radial-gradient(circle at top left, rgba(12, 85, 61, 0.28), transparent 26%), radial-gradient(circle at bottom right, rgba(24, 129, 91, 0.24), transparent 24%), linear-gradient(145deg, #E5F6EE 0%, #F0FAF5 42%, #FCFFFD 100%)',
-          }}
-        >
-          <div className="px-10 pt-12 pb-10 flex flex-col justify-center space-y-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-green-200 bg-white/70 w-fit">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-green-700 animate-pulse" />
-              <span className="text-xs font-semibold text-brand-green-800">Discover local shops</span>
-            </div>
-            <div>
-              <h1 className="text-4xl lg:text-5xl font-black text-slate-900 leading-[1.08] tracking-tight">
-                Find shops &amp; <span className="text-brand-green-800">products</span>
-              </h1>
-              <p className="text-4xl lg:text-5xl font-black text-slate-900 leading-[1.08] tracking-tight">near you</p>
-            </div>
-            <p className="text-sm text-slate-600 font-medium max-w-75 leading-relaxed">Search local stores, check open times, and save favourites with the Dukand app.</p>
-
-            <div className="rounded-2xl border border-brand-green-200 bg-white/85 p-4 shadow-sm backdrop-blur max-w-xl">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-brand-green-800">Download the app</p>
-                  <p className="text-sm text-slate-600 mt-1 leading-relaxed">Get faster local discovery, live store updates, and instant offers on the go.</p>
+          {/* ── HERO DESKTOP ── */}
+          <div className="dkn-hero-desktop">
+            <div className="dkn-hero-content">
+              <div className="dkn-hero-left">
+                <div className="dkn-hero-eyebrow">
+                  <span className="dkn-hero-eyebrow-dot" />
+                  Discover local shops
                 </div>
+                <h1 className="dkn-hero-h1">
+                  Find shops &amp; <em>products</em><br />near you
+                </h1>
+                <p className="dkn-hero-p">
+                  Search local stores, check open times, and save favourites — all in one place.
+                </p>
                 <a
                   href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-green-800 hover:bg-brand-green-900 text-white text-xs font-bold transition shadow-sm shrink-0"
+                  target="_blank" rel="noopener noreferrer"
+                  className="dkn-hero-cta"
                 >
-                  Download
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <Download size={15} /> Download the app <ArrowRight size={14} />
                 </a>
+                <div className="dkn-hero-feats">
+                  {[
+                    'Live open & close status for every shop',
+                    'Browse products by category near you',
+                    'Save favourites and get deal notifications',
+                  ].map((f) => (
+                    <div key={f} className="dkn-hero-feat">{f}</div>
+                  ))}
+                </div>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
+
+              <div className="dkn-hero-right">
+                <div className="dkn-hero-img-wrap">
+                  <Image src={heroIllustration} alt="MyDukan app" priority fill style={{ objectFit: 'contain', objectPosition: 'bottom center' }} />
+                </div>
+                <div className="dkn-hero-floater f1">
+                  <div className="dkn-floater-icon"><Store size={14} style={{ color: 'var(--g)' }} /></div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>Nearby shops</div>
+                    <div style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 1 }}>10 open right now</div>
+                  </div>
+                </div>
+                <div className="dkn-hero-floater f2">
+                  <Clock size={14} />
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>Save time daily</div>
+                    <div style={{ fontSize: 10, opacity: 0.6, marginTop: 1 }}>Check before you go</div>
+                  </div>
+                </div>
+                <div className="dkn-hero-floater f3">
+                  <span className="dkn-floater-dot" />
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>Open now</div>
+                    <div style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 1 }}>Confirmed live</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="dkn-hero-stat-row">
                 {[
-                  { value: 'Live', label: 'status' },
-                  { value: 'Saved', label: 'favourites' },
-                  { value: 'Deals', label: 'nearby' },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-xl bg-primary-lighter border border-brand-green-100 px-2.5 py-2 text-center">
-                    <p className="text-sm font-black text-brand-green-900">{item.value}</p>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-0.5">{item.label}</p>
+                  { val: 'Live', lbl: 'Shop status' },
+                  { val: 'Instant', lbl: 'Search results' },
+                  { val: 'Free', lbl: 'Always & forever' },
+                ].map((s) => (
+                  <div key={s.lbl} className="dkn-hero-stat">
+                    <div className="dkn-hero-stat-val">{s.val}</div>
+                    <div className="dkn-hero-stat-lbl">{s.lbl}</div>
                   </div>
                 ))}
               </div>
             </div>
+          </div>
 
-            <div className="flex flex-col gap-2 max-w-70 pt-1">
-              {[
-                { icon: Store, label: 'Live open and close status' },
-                { icon: LayoutGrid, label: 'Browse products by category' },
-                { icon: Heart, label: 'Save favourites for later' },
-              ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 bg-white/70 border border-brand-green-100">
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 bg-primary-lighter">
-                    <Icon className="w-3.5 h-3.5 text-brand-green-700" />
-                  </div>
-                  {label}
+          {/* ── HERO MOBILE ── */}
+          <div className="dkn-hero-mobile">
+            <div className="dkn-mob-eyebrow"><span className="dkn-hero-eyebrow-dot" /> Discover local</div>
+            <h1 className="dkn-mob-h1">Find shops &amp; <em>products</em> near you</h1>
+            <p className="dkn-mob-p">Search local stores, check open times, and save favourites.</p>
+            <a
+              href="https://play.google.com/store/apps/details?id=com.mydukan.dukanapp"
+              target="_blank" rel="noopener noreferrer"
+              className="dkn-mob-cta"
+            >
+              <Download size={14} /> Download app <ArrowRight size={12} />
+            </a>
+            <div className="dkn-mob-illus-wrap">
+              <Image src={heroIllustration} alt="MyDukan app" width={500} height={280} style={{ width: '100%', height: 'auto', objectFit: 'contain', objectPosition: 'bottom', display: 'block' }} />
+            </div>
+            <div className="dkn-mob-stats">
+              {[{ val: 'Live', lbl: 'Status' }, { val: 'Saved', lbl: 'Faves' }, { val: 'Free', lbl: 'Always' }].map((s) => (
+                <div key={s.lbl} className="dkn-mob-stat">
+                  <div className="dkn-mob-stat-val">{s.val}</div>
+                  <div className="dkn-mob-stat-lbl">{s.lbl}</div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="flex items-end justify-center relative min-h-85">
-            <div className="relative w-full h-95 flex items-end justify-center overflow-hidden">
-              <Image src={heroIllustration} alt="Dukand" priority className="w-full h-full object-contain object-bottom" />
-              <div className="absolute top-8 left-6 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 z-10 bg-white border border-brand-green-100 shadow-sm">
-                <Store className="w-4 h-4 text-brand-green-700" />Nearby shops
-              </div>
-              <div className="absolute top-20 right-6 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-white z-10 bg-brand-green-700" style={{ boxShadow: '0 4px 16px rgba(10,92,67,0.3)' }}>
-                <Clock className="w-3.5 h-3.5" />Save time everyday
-              </div>
-              <div className="absolute bottom-16 right-8 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 z-10 bg-white border border-brand-green-100 shadow-sm">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />Open now
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* ── TOOLBAR ── */}
-        <div className="bg-white border-b border-brand-green-100 sticky top-14 z-40">
-          {/* Range */}
-          <div className="px-4 md:px-6 py-2.5 flex items-center gap-3 overflow-x-auto no-scrollbar border-b border-brand-green-100">
-            <button
-              onClick={requestLocation}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 transition shrink-0 hover:bg-primary-lighter border border-brand-green-100"
-            >
-              <Navigation className="w-3.5 h-3.5 text-[#0A5C43]" />
-              {status === 'requesting' ? 'Locating…' : 'My location'}
-            </button>
-            <div className="w-px h-4 bg-brand-green-100 hidden md:block shrink-0" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Range</span>
-            <div className="flex gap-1.5">
+          {/* ── TOOLBAR ── */}
+          <div className="dkn-toolbar">
+            <div className="dkn-range-bar">
+              <span className="dkn-range-label">Range</span>
               {RANGES.map((r) => (
                 <button
                   key={r}
                   onClick={() => setRange(r)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition shrink-0 ${
-                    range === r ? 'bg-brand-green-700 text-white' : 'text-slate-500 bg-primary-lighter hover:bg-brand-green-50 border border-brand-green-100'
-                  }`}
+                  className={`dkn-range-chip${range === r ? ' active' : ''}`}
                 >
-                  {r === 'All' ? 'Any' : `${r}km`}
+                  {r === 'All' ? 'Any' : `${r} km`}
                 </button>
               ))}
             </div>
+            <div className="dkn-cats">
+              {GLOBAL_CATEGORIES.map((cat) => {
+                const meta = CATEGORY_MAPPING[cat];
+                const active = selectedCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`dkn-cat${active ? ' active' : ''}`}
+                    style={active ? { background: meta.color } : {}}
+                  >
+                    <span className="dkn-cat-emoji">{meta.emoji}</span>
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          {/* Categories */}
-          <div className="flex items-center gap-2 px-4 md:px-6 py-2.5 overflow-x-auto no-scrollbar">
-            {GLOBAL_CATEGORIES.map((cat) => {
-              const active = selectedCategory === cat;
-              const meta = CATEGORY_MAPPING[cat];
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition shrink-0 ${
-                    active ? 'text-white' : 'text-slate-600 bg-primary-lighter hover:bg-brand-green-50 border border-brand-green-100'
-                  }`}
-                  style={active ? { background: meta.activeBg } : {}}
-                >
-                  <span>{meta.emoji}</span>{cat}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
-        <div className="px-4 md:px-6 py-6 space-y-8">
+          <div className="dkn-body">
 
-          {/* ── BANNER ── */}
-          {bannerResponse.length > 0 ? (
-            <div className="w-full rounded-2xl overflow-hidden relative" style={{ boxShadow: '0 2px 12px rgba(10,92,67,0.10)' }}>
-              {bannerResponse.map((b, i) => (
-                <div key={b.id || i} className={`transition-opacity duration-700 ${i === activeBanner ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none'}`} style={{ backgroundColor: b.background_color || '#0A5C43' }}>
-                  {b.banner_type === 'image' && b.image
-                    ? <div className="w-full aspect-video md:h-44"><img src={b.image} alt="banner" className="w-full h-full object-cover" /></div>
-                    : <div className="px-7 py-8 text-white relative overflow-hidden">
-                        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-2 relative">{b.small_text || 'Save Time, Energy & Money'}</p>
-                        <h3 className="text-2xl font-black relative tracking-tight">{b.title || 'Dukand'}</h3>
-                        <p className="text-sm opacity-70 mt-1.5 relative">{b.subtitle || 'Make local shopping easy'}</p>
-                      </div>
-                  }
-                </div>
-              ))}
-              {bannerResponse.length > 1 && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                  {bannerResponse.map((_, i) => (
-                    <button key={i} onClick={() => setActiveBanner(i)} className={`rounded-full transition-all ${i === activeBanner ? 'w-5 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/40'}`} />
+            {/* ── BANNER ── */}
+            <div className="dkn-banner-wrap">
+              {banners.map((b, i) => {
+                if (b.banner_type === 'image' && b.image) {
+                  return (
+                    <div key={b.id} className={`dkn-banner-img-slide${i === activeBanner ? ' active' : ''}`}>
+                      <img src={b.image} alt="banner" />
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    key={b.id}
+                    className={`dkn-banner-slide${i === activeBanner ? ' active' : ''}`}
+                    style={{ background: b.background_color || '#0f3d28' }}
+                  >
+                    <div className="dkn-banner-eyebrow">{b.small_text || 'Save time · energy · money'}</div>
+                    <div className="dkn-banner-title">{b.title || 'MYDUKAN'}</div>
+                    <div className="dkn-banner-sub">{b.subtitle || 'Make local shopping easy'}</div>
+                  </div>
+                );
+              })}
+              {banners.length > 1 && (
+                <div className="dkn-bdots">
+                  {banners.map((_, i) => (
+                    <button
+                      key={i}
+                      className={`dkn-bdot${i === activeBanner ? ' active' : ''}`}
+                      onClick={() => setActiveBanner(i)}
+                    />
                   ))}
                 </div>
               )}
             </div>
-          ) : (
-            <div className="w-full rounded-2xl overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #0A5C43 0%, #0d7a5a 100%)', boxShadow: '0 2px 16px rgba(10,92,67,0.18)' }}>
-              <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-              <div className="px-7 py-8 text-white relative">
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-2">Save Time, Energy &amp; Money</p>
-                <h3 className="text-2xl font-black tracking-tight">DUKAND</h3>
-                <p className="text-sm opacity-70 mt-1.5">Make local shopping easy</p>
-              </div>
-            </div>
-          )}
 
-          {/* ── OPEN NOW ── */}
-          <section>
-            <SectionHeader
-              icon={Clock}
-              iconColor="#059669"
-              iconBg="#ECFDF5"
-              title="Open Now Nearby"
-              subtitle="Shops operational right now"
-              action={
-                hasCoords && openNowShops.length > PAGE_SIZE
-                  ? <button className="text-xs font-semibold text-[#0A5C43] flex items-center gap-1 hover:underline shrink-0 pt-0.5">See all <ArrowRight className="w-3 h-3" /></button>
-                  : null
-              }
-            />
-            {hasCoords && isLoading && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">{[...Array(3)].map((_, i) => <ShopCardSkeleton key={i} />)}</div>
-            )}
-            {hasCoords && !isLoading && openNowShops.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {openNowShops.slice(0, PAGE_SIZE).map((shop) => <ShopCard key={`open-${shop.id}`} shop={shop} />)}
-              </div>
-            )}
-            {hasCoords && !isLoading && openNowShops.length === 0 && (
-              <EmptyState icon={Clock} title="No shops open right now" subtitle="Check back later or explore all nearby shops below" />
-            )}
-          </section>
-
-          {/* ── ALL NEARBY SHOPS ── */}
-          <section>
-            <SectionHeader
-              icon={MapPin}
-              iconColor="#0A5C43"
-              iconBg="#E8F5EE"
-              title="All Nearby Shops"
-              subtitle={hasCoords ? `Within ${range === 'All' ? 'any distance' : range + ' km'} · ${selectedCategory !== 'All' ? selectedCategory : 'all categories'}` : 'Set your location to see shops near you'}
-            />
-
-            {!hasCoords && status !== 'requesting' && (
-              <div className="bg-white border border-brand-green-100 rounded-2xl p-10 text-center space-y-4 shadow-sm">
-                <div className="w-14 h-14 bg-primary-lighter border border-brand-green-100 rounded-2xl flex items-center justify-center mx-auto">
-                  <Navigation className="w-6 h-6 text-brand-green-700" />
-                </div>
-                <div>
-                  <p className="font-bold text-slate-800">Share your location</p>
-                  <p className="text-xs text-slate-400 mt-1.5 max-w-60 mx-auto leading-relaxed">We need your location to show nearby shops and accurate distances</p>
-                </div>
-                <button onClick={requestLocation} className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-green-700 hover:bg-brand-green-800 text-white text-sm font-semibold rounded-xl transition shadow-sm">
-                  <Navigation className="w-4 h-4" />Use my location
-                </button>
-                {status === 'denied' && <p className="text-xs text-amber-600 font-medium">Location was blocked — allow it in browser settings and try again.</p>}
-              </div>
-            )}
-
-            {status === 'requesting' && (
-              <div className="bg-white border border-[#E2EFE8] rounded-2xl p-12 text-center space-y-3">
-                <Loader2 className="w-7 h-7 text-[#0A5C43] animate-spin mx-auto" />
-                <p className="text-sm text-slate-400">Getting your location…</p>
-              </div>
-            )}
-
-            {hasCoords && isLoading && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">{[...Array(6)].map((_, i) => <ShopCardSkeleton key={i} />)}</div>
-            )}
-
-            {hasCoords && isError && !isLoading && (
-              <div className="bg-red-50 border border-red-100 rounded-xl p-8 text-center space-y-2">
-                <AlertCircle className="w-6 h-6 text-red-400 mx-auto" />
-                <p className="text-sm font-semibold text-red-700">Failed to load shops</p>
-                <p className="text-xs text-red-400">Check your connection and try again</p>
-              </div>
-            )}
-
-            {hasCoords && !isLoading && !isError && (
-              filteredShops.length > 0 ? (
-                <>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {filteredShops.slice(0, shopPage * PAGE_SIZE).map((shop) => {
-                      const isPremium = PREMIUM_PLANS.includes(shop.plan);
-                      return (
-                        <div key={shop.id} className="relative">
-                          {isPremium && (
-                            <div className="absolute top-2 right-2 z-10 bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow flex items-center gap-0.5">
-                              <Award className="w-2.5 h-2.5" />PRO
-                            </div>
-                          )}
-                          <ShopCard shop={shop} />
-                        </div>
-                      );
-                    })}
+            {/* ── OPEN NOW ── */}
+            <section>
+              <div className="dkn-section-head">
+                <div className="dkn-section-left">
+                  <div className="dkn-section-icon-wrap" style={{ background: '#dcfce7' }}>
+                    <Clock size={15} style={{ color: '#166534' }} />
                   </div>
-                  {filteredShops.length > shopPage * PAGE_SIZE && (
-                    <div className="text-center pt-4">
-                      <button onClick={() => setShopPage((p) => p + 1)} className="px-6 py-2.5 bg-white hover:bg-[#F3FAF6] text-sm font-semibold text-slate-600 rounded-xl border border-[#D8EDE3] transition">
-                        Load more shops
-                      </button>
+                  <div>
+                    <div className="dkn-section-title">Open Now Nearby</div>
+                    <div className="dkn-section-sub">Shops operating right now</div>
+                  </div>
+                </div>
+                {hasCoords && openNowShops.length > PAGE_SIZE && (
+                  <button className="dkn-see-all">See all <ArrowRight size={11} /></button>
+                )}
+              </div>
+
+              {hasCoords && isLoading && (
+                <div className="dkn-hscroll">
+                  {[...Array(4)].map((_, i) => <ShopCardSkeleton key={i} />)}
+                </div>
+              )}
+              {hasCoords && !isLoading && openNowShops.length > 0 && (
+                <div className="dkn-hscroll">
+                  {openNowShops.slice(0, PAGE_SIZE).map((shop) => {
+                    const isPremium = PREMIUM_PLANS.includes(shop.plan);
+                    const meta = CATEGORY_MAPPING[shop.category] || CATEGORY_MAPPING.Others;
+                    return (
+                      <Link key={`open-${shop.id}`} href={`/shop/${shop.id}`} className="dkn-shop-card">
+                        <div className="dkn-card-img">
+                          {shop.cover_image || shop.image
+                            ? <img src={shop.cover_image || shop.image} alt={shop.name} />
+                            : <span>{meta.emoji}</span>}
+                          <div className="dkn-open-pill"><span className="dkn-open-dot" />Open</div>
+                          {isPremium && <span className="dkn-pro-badge"><Award size={8} />PRO</span>}
+                        </div>
+                        <div className="dkn-card-body">
+                          <div className="dkn-card-name">{shop.name}</div>
+                          <div className="dkn-card-cat">{shop.category}</div>
+                          <div className="dkn-card-foot">
+                            {shop.distance && <span className="dkn-dist-pill">{Number(shop.distance).toFixed(1)} km</span>}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+              {hasCoords && !isLoading && openNowShops.length === 0 && (
+                <div className="dkn-empty">
+                  <div className="dkn-empty-icon"><Clock size={18} style={{ color: 'var(--ink3)' }} /></div>
+                  <p>No shops open right now</p>
+                  <span>Check back later or explore all nearby shops below</span>
+                </div>
+              )}
+              {!hasCoords && (
+                <div className="dkn-empty">
+                  <div className="dkn-empty-icon"><Clock size={18} style={{ color: 'var(--ink3)' }} /></div>
+                  <p>Share your location to see open shops</p>
+                </div>
+              )}
+            </section>
+
+            {/* ── ALL NEARBY ── */}
+            <section>
+              <div className="dkn-section-head">
+                <div className="dkn-section-left">
+                  <div className="dkn-section-icon-wrap" style={{ background: 'var(--g-soft)' }}>
+                    <MapPin size={15} style={{ color: 'var(--g)' }} />
+                  </div>
+                  <div>
+                    <div className="dkn-section-title">All Nearby Shops</div>
+                    <div className="dkn-section-sub">
+                      {hasCoords
+                        ? `Within ${range === 'All' ? 'any distance' : `${range} km`} · ${selectedCategory !== 'All' ? selectedCategory : 'all categories'}`
+                        : 'Set your location to see shops near you'}
                     </div>
-                  )}
-                </>
-              ) : (
-                <EmptyState icon={Store} title="No shops found" subtitle="Try a wider range or different category" />
-              )
-            )}
-          </section>
+                  </div>
+                </div>
+              </div>
 
+              {!hasCoords && status !== 'requesting' && (
+                <div className="dkn-loc-cta">
+                  <div className="dkn-loc-cta-icon">
+                    <Navigation size={24} style={{ color: 'var(--g)' }} />
+                  </div>
+                  <h3>Share your location</h3>
+                  <p>We need your location to show nearby shops and accurate distances.</p>
+                  <button className="dkn-loc-cta-btn" onClick={requestLocation}>
+                    <Navigation size={15} /> Use my location
+                  </button>
+                  {status === 'denied' && <p className="dkn-loc-denied-msg">Location was blocked — allow it in browser settings and try again.</p>}
+                </div>
+              )}
+
+              {status === 'requesting' && (
+                <div className="dkn-requesting">
+                  <Loader2 size={26} className="dkn-spin" style={{ color: 'var(--g)' }} />
+                  <p>Getting your location…</p>
+                </div>
+              )}
+
+              {hasCoords && isLoading && (
+                <div className="dkn-skeletons">
+                  {[...Array(8)].map((_, i) => <ShopCardSkeleton key={i} />)}
+                </div>
+              )}
+
+              {hasCoords && isError && !isLoading && (
+                <div className="dkn-error">
+                  <AlertCircle size={22} style={{ color: '#ef4444' }} />
+                  <p>Failed to load shops</p>
+                  <span>Check your connection and try again</span>
+                </div>
+              )}
+
+              {hasCoords && !isLoading && !isError && (
+                filteredShops.length > 0 ? (
+                  <>
+                    <div className="dkn-grid">
+                      {filteredShops.slice(0, shopPage * PAGE_SIZE).map((shop) => {
+                        const isPremium = PREMIUM_PLANS.includes(shop.plan);
+                        const meta = CATEGORY_MAPPING[shop.category] || CATEGORY_MAPPING.Others;
+                        return (
+                          <Link key={shop.id} href={`/shop/${shop.id}`} className="dkn-grid-card">
+                            {isPremium && (
+                              <span className="dkn-pro-badge" style={{ position: 'absolute', top: 7, right: 7, zIndex: 2 }}>
+                                <Award size={8} /> PRO
+                              </span>
+                            )}
+                            <div className="dkn-gc-img">
+                              {shop.cover_image || shop.image
+                                ? <img src={shop.cover_image || shop.image} alt={shop.name} />
+                                : <span>{meta.emoji}</span>}
+                            </div>
+                            <div className="dkn-gc-body">
+                              <div className="dkn-gc-name">{shop.name}</div>
+                              <div className="dkn-gc-cat">{shop.category}</div>
+                              <div className="dkn-gc-foot">
+                                {shop.distance && <span className="dkn-gc-dist">{Number(shop.distance).toFixed(1)} km</span>}
+                                {shop.is_open
+                                  ? <span className="dkn-gc-open">Open</span>
+                                  : <span className="dkn-gc-closed">Closed</span>}
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                    {filteredShops.length > shopPage * PAGE_SIZE && (
+                      <div className="dkn-loadmore">
+                        <button onClick={() => setShopPage((p) => p + 1)}>Load more shops</button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="dkn-empty">
+                    <div className="dkn-empty-icon"><Store size={18} style={{ color: 'var(--ink3)' }} /></div>
+                    <p>No shops found</p>
+                    <span>Try a wider range or different category</span>
+                  </div>
+                )
+              )}
+            </section>
+
+          </div>
         </div>
-      </div>
 
-      <BottomNav />
-    </div>
+        <BottomNav />
+      </div>
+    </>
   );
 }

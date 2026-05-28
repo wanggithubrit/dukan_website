@@ -25,7 +25,7 @@ export const metadata = {
   metadataBase: new URL("https://mydukan.online"),
 
   keywords: [
-    "Dukand",
+    "mydukan",
     "mydukan",
     "dukan",
     "local shops",
