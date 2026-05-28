@@ -91,6 +91,7 @@ export default function CustomerLoginPage() {
                   value={loginData.username}
                   onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
                   placeholder="Enter your username"
+                  aria-label="Username"
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white transition"
                 />
               </div>
@@ -108,6 +109,7 @@ export default function CustomerLoginPage() {
                   value={loginData.password}
                   onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                   placeholder="Enter your password"
+                  aria-label="Password"
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white transition"
                 />
               </div>

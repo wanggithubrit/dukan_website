@@ -242,6 +242,7 @@ export default function CustomerSignupPage() {
                   value={form.username}
                   onChange={(e) => updateField('username', e.target.value)}
                   placeholder="Choose your username"
+                  aria-label="Username"
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white transition"
                 />
               </div>
@@ -263,6 +264,7 @@ export default function CustomerSignupPage() {
                   value={form.email}
                   onChange={(e) => handleEmailChange(e.target.value)}
                   placeholder="your@email.com"
+                  aria-label="Email"
                   disabled={emailVerified}
                   className="w-full pl-10 pr-28 py-3 bg-transparent text-sm focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 />
@@ -298,6 +300,7 @@ export default function CustomerSignupPage() {
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       placeholder="000000"
+                      aria-label="OTP"
                       maxLength="6"
                       className="flex-1 px-3 py-2 bg-white border border-green-300 rounded text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-brand-green-600"
                     />
@@ -335,6 +338,7 @@ export default function CustomerSignupPage() {
                   value={form.password}
                   onChange={(e) => updateField('password', e.target.value)}
                   placeholder="Min 6 characters"
+                  aria-label="Password"
                   className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white transition"
                 />
                 <button
@@ -364,6 +368,7 @@ export default function CustomerSignupPage() {
                   value={form.confirmPassword}
                   onChange={(e) => updateField('confirmPassword', e.target.value)}
                   placeholder="Re-enter your password"
+                  aria-label="Confirm Password"
                   className="w-full pl-10 pr-10 py-3 bg-transparent text-sm focus:outline-none"
                 />
                 <button

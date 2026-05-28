@@ -354,6 +354,8 @@ export default function HomeDashboard() {
           --fhead:    'Plus Jakarta Sans', system-ui, sans-serif;
           --fbody:    'Plus Jakarta Sans', system-ui, sans-serif;
           --border:   rgba(26,92,58,0.11);
+          /* Mobile header height tracking */
+          --mob-header-h: 100px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -363,7 +365,9 @@ export default function HomeDashboard() {
           background: var(--cream);
           color: var(--ink);
           min-height: 100vh;
+          padding-top:10px;
           padding-bottom: 96px;
+          padding-bottom: calc(96px + env(safe-area-inset-bottom));
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
         }
@@ -371,9 +375,11 @@ export default function HomeDashboard() {
         /* ── HEADER ── */
         .dkn-header {
           position: sticky; top: 0; z-index: 80;
-          background: rgba(250,250,247,0.94);
+          background: rgba(250,250,247,0.96);
           backdrop-filter: blur(24px) saturate(200%);
           border-bottom: 1px solid var(--border);
+          margin-bottom: 0;
+          padding-bottom: 0;
         }
         .dkn-header-inner {
           max-width: 1360px; margin: 0 auto;
@@ -399,7 +405,6 @@ export default function HomeDashboard() {
           color: var(--ink);
           letter-spacing: 0.02em;
           -webkit-text-stroke: 0.4px currentColor;
-      
         }
         .dkn-logo-text span { color: var(--g); }
 
@@ -441,7 +446,7 @@ export default function HomeDashboard() {
           font-family: var(--fbody); border: 1px solid rgba(0,0,0,0.07); flex-shrink: 0;
         }
 
-        /* Download button — right of search */
+        /* Download button */
         .dkn-dl-btn {
           display: flex; align-items: center; gap: 7px;
           padding: 8px 18px; border-radius: 50px; flex-shrink: 0;
@@ -452,7 +457,7 @@ export default function HomeDashboard() {
         }
         .dkn-dl-btn:hover { background: #154e30; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,92,58,0.38); }
 
-        /* Nav links — right side */
+        /* Nav links */
         .dkn-header-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
         .dkn-nav-link {
           font-family: var(--fbody); font-size: 12px; font-weight: 500; color: var(--ink3);
@@ -469,18 +474,16 @@ export default function HomeDashboard() {
         .dkn-signup-btn:hover { background: var(--g); color: white; }
 
         /* ── MOBILE HEADER ── */
-        /* Row 1: logo + location + download (always visible on mobile) */
         .dkn-mobile-top {
           display: none;
-          padding: 10px 14px 8px;
+          padding: 10px 14px 0;
           align-items: center; gap: 8px;
-          background: rgba(250,250,247,0.94);
+          background: rgba(250,250,247,0.96);
         }
-        /* Row 2: search bar */
         .dkn-mobile-search-row {
           display: none;
-          padding: 0 14px 10px;
-          background: rgba(250,250,247,0.94);
+          padding: 8px 14px 10px;
+          background: rgba(250,250,247,0.96);
         }
         .dkn-mob-search {
           width: 100%; display: flex; align-items: center; gap: 8px;
@@ -514,8 +517,16 @@ export default function HomeDashboard() {
           .dkn-header-actions { display: none !important; }
           .dkn-mobile-top { display: flex !important; }
           .dkn-mobile-search-row { display: block !important; }
-          .dkn-header-inner { height: auto; padding: 0; flex-direction: column; align-items: stretch; gap: 0; }
-          .dkn-header-inner > .dkn-logo { display: none; } /* logo shown in mobile-top */
+          /* Reset header-inner to auto height on mobile */
+          .dkn-header-inner {
+            height: auto;
+            padding: 0;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0;
+          }
+          /* Hide desktop logo — shown in mobile-top */
+          .dkn-header-inner > .dkn-logo { display: none; }
         }
 
         /* Denied banner */
@@ -681,22 +692,38 @@ export default function HomeDashboard() {
         .dkn-mob-stat-lbl { font-family: var(--fbody); font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
         @media (min-width: 768px) { .dkn-hero-mobile { display: none; } }
 
-        /* ── TOOLBAR ── */
+        /* ── TOOLBAR ─────────────────────────────────────────────────────────
+           KEY FIX: On mobile the header is auto-height (two rows).
+           We use top: 0 on a wrapper that sticks below the header via
+           the natural document flow — no hardcoded pixel offset needed.
+           The header is sticky top:0, the toolbar is sticky top:0 inside
+           a flex column, so it naturally stacks flush below the header.
+        ────────────────────────────────────────────────────────────────────── */
         .dkn-toolbar {
-          position: sticky; top: 64px; z-index: 70;
+          position: sticky;
+          top: 64px; /* desktop header height */
+          z-index: 70;
           background: rgba(250,250,247,0.96);
           backdrop-filter: blur(20px) saturate(180%);
           border-bottom: 1px solid var(--border);
+          margin-top: 0;
         }
-        /* Mobile toolbar: top shifts because mobile header is taller */
+
+        /* On mobile: header has no fixed height, so we use a CSS trick —
+           set top to the actual rendered header height via a JS-set custom
+           property, with a sensible fallback of 100px */
         @media (max-width: 767px) {
-          .dkn-toolbar { top: 112px; }
+          .dkn-toolbar {
+            /* Fallback: mobile top row ~52px + search row ~58px = ~110px */
+            top: var(--mob-header-h, 110px);
+          }
         }
 
         /* ── RANGE BAR ── */
         .dkn-range-bar {
           padding: 10px 24px; display: flex; align-items: center; gap: 8px;
           overflow-x: auto; border-bottom: 1px solid rgba(26,92,58,0.06);
+          scrollbar-width: none;
         }
         .dkn-range-bar::-webkit-scrollbar { display: none; }
         .dkn-range-label {
@@ -712,7 +739,6 @@ export default function HomeDashboard() {
         .dkn-range-chip:hover { border-color: var(--g3); color: var(--g); }
         .dkn-range-chip.active { background: var(--g); color: white; border-color: var(--g); box-shadow: 0 2px 10px rgba(26,92,58,0.25); }
 
-        /* Mobile range: pill-style, compact, full-width scroll */
         @media (max-width: 767px) {
           .dkn-range-bar { padding: 8px 14px; gap: 6px; }
           .dkn-range-label { font-size: 9px; }
@@ -720,7 +746,10 @@ export default function HomeDashboard() {
         }
 
         /* ── CATEGORIES ── */
-        .dkn-cats { padding: 9px 24px; display: flex; gap: 6px; overflow-x: auto; }
+        .dkn-cats {
+          padding: 9px 24px; display: flex; gap: 6px; overflow-x: auto;
+          scrollbar-width: none;
+        }
         .dkn-cats::-webkit-scrollbar { display: none; }
         .dkn-cat {
           flex-shrink: 0; display: flex; align-items: center; gap: 6px;
@@ -771,7 +800,7 @@ export default function HomeDashboard() {
         .dkn-see-all:hover { background: var(--g-soft); border-color: var(--g3); }
 
         /* ── HORIZONTAL SHOP CARDS ── */
-        .dkn-hscroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+        .dkn-hscroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
         .dkn-hscroll::-webkit-scrollbar { display: none; }
         .dkn-shop-card { flex-shrink: 0; width: 164px; border-radius: 18px; background: white; border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); box-shadow: var(--shadow); text-decoration: none; display: block; }
         .dkn-shop-card:hover { transform: translateY(-4px) scale(1.01); box-shadow: var(--shadow-md); }
@@ -882,6 +911,9 @@ export default function HomeDashboard() {
       `}</style>
 
       <div className="dkn-root">
+        {/* JS: measure real header height and set --mob-header-h on mount */}
+        <MobileHeaderHeightSync />
+
         {searchOpen && (
           <SearchOverlay
             query={search}
@@ -893,7 +925,7 @@ export default function HomeDashboard() {
         )}
 
         {/* ── HEADER ── */}
-        <header className="dkn-header">
+        <header className="dkn-header" id="dkn-header">
           {/* ── DESKTOP HEADER ROW ── */}
           <div className="dkn-header-inner">
             <Link href="/" className="dkn-logo">
@@ -927,7 +959,7 @@ export default function HomeDashboard() {
               </a>
             </div>
 
-            {/* Auth links on the far right */}
+            {/* Auth links */}
             <div className="dkn-header-actions">
               <Link href="/customer/login" className="dkn-nav-link">Customer</Link>
               <Link href="/merchant/login" className="dkn-nav-link">Merchant</Link>
@@ -935,7 +967,7 @@ export default function HomeDashboard() {
             </div>
           </div>
 
-          {/* ── MOBILE HEADER ROW 1: Logo + Location + Download ── */}
+          {/* ── MOBILE ROW 1: Logo + Location + Download ── */}
           <div className="dkn-mobile-top">
             <Link href="/" className="dkn-logo" style={{ flexShrink: 0 }}>
               <div style={{ width: 32, height: 32, minWidth: 32, minHeight: 32, background: 'var(--g-pale)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -961,7 +993,7 @@ export default function HomeDashboard() {
             </a>
           </div>
 
-          {/* ── MOBILE HEADER ROW 2: Search ── */}
+          {/* ── MOBILE ROW 2: Search ── */}
           <div className="dkn-mobile-search-row">
             <button className="dkn-mob-search" onClick={() => setSearchOpen(true)}>
               <Search size={14} style={{ color: 'var(--ink3)' }} />
@@ -1321,4 +1353,33 @@ export default function HomeDashboard() {
       </div>
     </>
   );
+}
+
+/* ─── MOBILE HEADER HEIGHT SYNC ──────────────────────────────────────────────
+   Measures the real rendered header height after mount and on resize,
+   then sets --mob-header-h so the toolbar sticks flush below with zero gap.
+────────────────────────────────────────────────────────────────────────────── */
+function MobileHeaderHeightSync() {
+  useEffect(() => {
+    const header = document.getElementById('dkn-header');
+    if (!header) return;
+
+    const update = () => {
+      const h = header.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--mob-header-h', `${h}px`);
+    };
+
+    update();
+    window.addEventListener('resize', update, { passive: true });
+    // Also observe any layout changes (e.g. denied banner appearing)
+    const ro = new ResizeObserver(update);
+    ro.observe(header);
+
+    return () => {
+      window.removeEventListener('resize', update);
+      ro.disconnect();
+    };
+  }, []);
+
+  return null;
 }
