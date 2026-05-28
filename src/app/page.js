@@ -52,18 +52,22 @@ function useLocation() {
   const [locLabel, setLocLabel] = useState('Set location');
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const saved = localStorage.getItem(LOC_STORAGE_KEY);
-      if (saved) {
-        const { lat, lon, label } = JSON.parse(saved);
-        if (lat && lon && lat !== 'undefined' && lon !== 'undefined') {
-          setCoords({ lat: String(lat), lon: String(lon) });
-          setLocLabel(label || `${Number(lat).toFixed(2)}, ${Number(lon).toFixed(2)}`);
-          setStatus('granted');
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(LOC_STORAGE_KEY);
+        if (saved) {
+          const { lat, lon, label } = JSON.parse(saved);
+          if (lat && lon && lat !== 'undefined' && lon !== 'undefined') {
+            const finalLabel = label || `${Number(lat).toFixed(2)}, ${Number(lon).toFixed(2)}`;
+            Promise.resolve().then(() => {
+              setCoords({ lat: String(lat), lon: String(lon) });
+              setStatus('granted');
+              setLocLabel(finalLabel);
+            });
+          }
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
   }, []);
 
   const requestLocation = useCallback(() => {
@@ -260,9 +264,16 @@ export default function HomeDashboard() {
   const [activeBanner, setActiveBanner] = useState(0);
   const [shopPage, setShopPage] = useState(1);
 
-  const { lat, lon, status, hasCoords, locLabel, requestLocation } = useLocation();
+  // Adjust state during render if category or range changes to avoid useEffect cascading renders
+  const [prevCategory, setPrevCategory] = useState('All');
+  const [prevRange, setPrevRange] = useState('All');
+  if (selectedCategory !== prevCategory || range !== prevRange) {
+    setPrevCategory(selectedCategory);
+    setPrevRange(range);
+    setShopPage(1);
+  }
 
-  useEffect(() => { setShopPage(1); }, [selectedCategory, range]);
+  const { lat, lon, status, hasCoords, locLabel, requestLocation } = useLocation();
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') { setSearchOpen(false); setSearch(''); } };
     window.addEventListener('keydown', onKey);
@@ -282,11 +293,42 @@ export default function HomeDashboard() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const banners = useMemo(() => {
+    return bannerResponse.length > 0 ? bannerResponse : [
+      { id: '_d1', banner_type: 'text', title: 'MYDUKAN', subtitle: 'Make local shopping easy', small_text: 'Save time · energy · money', background_color: '#0f3d28' },
+      { id: '_d2', banner_type: 'text', title: 'Live Store Status', subtitle: 'Know if a shop is open before you leave', small_text: 'New on MyDukan', background_color: '#0a3347' },
+      { id: '_d3', banner_type: 'text', title: 'Shop by Category', subtitle: '12+ categories, thousands of local products', small_text: 'Browse Smart', background_color: '#2d1b69' },
+    ];
+  }, [bannerResponse]);
+
+  const handleBannerClick = useCallback((b) => {
+    if (!b.link) return;
+    try {
+      let targetUrl = b.link;
+      if (b.link.includes('instagram.com') || b.link.startsWith('@')) {
+        const u = b.link
+          .replace(/https?:\/\/instagram\.com\//g, '')
+          .replace(/@/g, '')
+          .trim();
+        targetUrl = `https://instagram.com/${u}`;
+      } else if (
+        b.link.includes('wa.me') ||
+        b.link.includes('whatsapp') ||
+        /^\d+$/.test(b.link)
+      ) {
+        targetUrl = `https://wa.me/${b.link.replace(/\D/g, '')}`;
+      }
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   useEffect(() => {
-    if (bannerResponse.length < 2) return;
-    const t = setInterval(() => setActiveBanner((p) => (p + 1) % bannerResponse.length), 6000);
+    if (banners.length < 2) return;
+    const t = setInterval(() => setActiveBanner((p) => (p + 1) % banners.length), 6000);
     return () => clearInterval(t);
-  }, [bannerResponse.length]);
+  }, [banners.length]);
 
   const { data: shops = [], isLoading, isError } = useQuery({
     queryKey: ['cachedShops', lat, lon, range],
@@ -311,12 +353,6 @@ export default function HomeDashboard() {
     filtered.sort(byDistance);
     return { filteredShops: filtered, openNowShops: filtered.filter((s) => s.is_open) };
   }, [shops, selectedCategory, range]);
-
-  const banners = bannerResponse.length > 0 ? bannerResponse : [
-    { id: '_d1', banner_type: 'text', title: 'MYDUKAN', subtitle: 'Make local shopping easy', small_text: 'Save time · energy · money', background_color: '#0f3d28' },
-    { id: '_d2', banner_type: 'text', title: 'Live Store Status', subtitle: 'Know if a shop is open before you leave', small_text: 'New on MyDukan', background_color: '#0a3347' },
-    { id: '_d3', banner_type: 'text', title: 'Shop by Category', subtitle: '12+ categories, thousands of local products', small_text: 'Browse Smart', background_color: '#2d1b69' },
-  ];
 
   return (
     <>
@@ -783,7 +819,7 @@ export default function HomeDashboard() {
         .dkn-banner-eyebrow { font-family: var(--fbody); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; opacity: 0.5; margin-bottom: 7px; position: relative; }
         .dkn-banner-title { font-family: var(--fhead); font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 5px; position: relative; }
         .dkn-banner-sub { font-family: var(--fbody); font-size: 13px; opacity: 0.62; position: relative; line-height: 1.5; }
-        .dkn-banner-img-slide { display: none; }
+        .dkn-banner-img-slide { display: none; position: relative; }
         .dkn-banner-img-slide.active { display: block; }
         .dkn-banner-img-slide img { width: 100%; height: 180px; object-fit: cover; display: block; }
         .dkn-bdots { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; z-index: 10; }
@@ -1151,8 +1187,34 @@ export default function HomeDashboard() {
               {banners.map((b, i) => {
                 if (b.banner_type === 'image' && b.image) {
                   return (
-                    <div key={b.id} className={`dkn-banner-img-slide${i === activeBanner ? ' active' : ''}`}>
+                    <div 
+                      key={b.id} 
+                      className={`dkn-banner-img-slide${i === activeBanner ? ' active' : ''}`}
+                      onClick={() => handleBannerClick(b)}
+                      style={{ cursor: b.link ? 'pointer' : 'default' }}
+                    >
                       <img src={b.image} alt="banner" />
+                      {b.link && (
+                        <div className="dkn-banner-link-icon" style={{
+                          position: 'absolute',
+                          top: '16px',
+                          right: '16px',
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          background: 'rgba(0, 0, 0, 0.4)',
+                          backdropFilter: 'blur(4px)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          zIndex: 5
+                        }}>
+                          ↗
+                        </div>
+                      )}
                     </div>
                   );
                 }
@@ -1160,8 +1222,30 @@ export default function HomeDashboard() {
                   <div
                     key={b.id}
                     className={`dkn-banner-slide${i === activeBanner ? ' active' : ''}`}
-                    style={{ background: b.background_color || '#0f3d28' }}
+                    style={{ background: b.background_color || '#0f3d28', cursor: b.link ? 'pointer' : 'default' }}
+                    onClick={() => handleBannerClick(b)}
                   >
+                    {b.link && (
+                      <div className="dkn-banner-link-icon" style={{
+                        position: 'absolute',
+                        top: '16px',
+                        right: '16px',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(4px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        zIndex: 5
+                      }}>
+                        ↗
+                      </div>
+                    )}
                     <div className="dkn-banner-eyebrow">{b.small_text || 'Save time · energy · money'}</div>
                     <div className="dkn-banner-title">{b.title || 'MYDUKAN'}</div>
                     <div className="dkn-banner-sub">{b.subtitle || 'Make local shopping easy'}</div>

@@ -12,18 +12,25 @@ export const useUserCoordinates = () => {
   const [hasPermission, setHasPermission] = useState(true);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const lat = localStorage.getItem('user_lat');
-    const lon = localStorage.getItem('user_lon');
-
-    if (lat && lon && lat !== 'undefined' && lon !== 'undefined') {
-      setCoords({ 
-        lat: parseFloat(lat), 
-        lon: parseFloat(lon) 
-      });
+    // Read from localStorage on mount (client-only)
+    if (typeof window !== 'undefined') {
+      const lat = localStorage.getItem('user_lat');
+      const lon = localStorage.getItem('user_lon');
+      if (lat && lon && lat !== 'undefined' && lon !== 'undefined') {
+        const parsedLat = parseFloat(lat);
+        const parsedLon = parseFloat(lon);
+        Promise.resolve().then(() => {
+          setCoords({ lat: parsedLat, lon: parsedLon });
+          setIsLoaded(true);
+        });
+        return;
+      }
     }
-    setIsLoaded(true);
+    
+    // Defer state update to next microtask to avoid synchronous setState inside useEffect body
+    Promise.resolve().then(() => {
+      setIsLoaded(true);
+    });
   }, []);
 
   const requestBrowserLocation = useCallback(() => {

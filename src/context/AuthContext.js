@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '@/utils/api';
 
 const AuthContext = createContext(null);
@@ -9,6 +9,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [shop, setShop] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchShopDetails = useCallback(async (userId) => {
+    try {
+      const res = await api.get(`/my-shop/${userId}/`);
+      setShop(res.data);
+      return res.data;
+    } catch (err) {
+      console.error('Failed to fetch shop details', err);
+      setShop(null);
+    }
+  }, []);
 
   // Check auth state on mount
   useEffect(() => {
@@ -35,18 +46,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
     initAuth();
-  }, []);
-
-  const fetchShopDetails = async (userId) => {
-    try {
-      const res = await api.get(`/my-shop/${userId}/`);
-      setShop(res.data);
-      return res.data;
-    } catch (err) {
-      console.error('Failed to fetch shop details', err);
-      setShop(null);
-    }
-  };
+  }, [fetchShopDetails]);
 
   const login = async (usernameOrEmail, password) => {
     try {

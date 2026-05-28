@@ -41,7 +41,7 @@ export default function FavoritesPage() {
   useEffect(() => {
     if (user === null && isLoaded) {
       showToast('Please login to view saved shops', 'error');
-      router.replace('/merchant/login');
+      router.replace('/customer/login');
     }
   }, [user, isLoaded, router, showToast]);
 

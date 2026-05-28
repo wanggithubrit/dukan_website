@@ -280,9 +280,9 @@ export default function MerchantSignupPage() {
     form.confirmPassword.length > 0 && form.password !== form.confirmPassword;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-white border-b border-slate-200 px-4 py-4 sm:px-6 lg:px-8">
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 py-4 sm:px-6 lg:px-8">
         <Link href="/merchant/login" className="inline-flex items-center gap-2 text-sm font-bold text-brand-green-600 hover:text-brand-green-700">
           ← Back to Login
         </Link>
@@ -299,15 +299,15 @@ export default function MerchantSignupPage() {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 mb-3">
               <Store className="w-8 h-8 text-brand-green-600" />
-              <h1 className="text-3xl font-black text-slate-900">Seller Setup</h1>
+              <h1 className="text-3xl font-black text-slate-900 dark:text-white">Seller Setup</h1>
             </div>
-            <p className="text-sm text-slate-600">Tell us about your shop</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Tell us about your shop</p>
           </div>
 
           <div className="space-y-5">
             {/* Username */}
             <div>
-              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wide mb-2">
                 Username
               </label>
               <div className="relative">
@@ -318,20 +318,20 @@ export default function MerchantSignupPage() {
                   onChange={(e) => updateField('username', e.target.value)}
                   placeholder="Your business username"
                   aria-label="Username"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white transition"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white dark:focus:bg-slate-950 transition"
                 />
               </div>
             </div>
 
             {/* Email + OTP */}
             <div>
-              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wide mb-2">
                 Email
               </label>
               <div className={`relative border rounded-lg transition ${
                 emailVerified
-                  ? 'border-brand-green-600 bg-green-50'
-                  : 'border-slate-200 bg-slate-50'
+                  ? 'border-brand-green-600 bg-green-50 dark:bg-brand-green-950/20'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900'
               }`}>
                 <Mail className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
                 <input
@@ -341,10 +341,10 @@ export default function MerchantSignupPage() {
                   placeholder="business@email.com"
                   aria-label="Email"
                   disabled={emailVerified}
-                  className="w-full pl-10 pr-28 py-3 bg-transparent text-sm focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-28 py-3 bg-transparent text-sm text-slate-900 dark:text-slate-100 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 />
                 {emailVerified ? (
-                  <div className="absolute right-3 top-3 flex items-center gap-1 text-xs font-bold text-brand-green-600 bg-green-100 px-2 py-1 rounded">
+                  <div className="absolute right-3 top-3 flex items-center gap-1 text-xs font-bold text-brand-green-600 dark:text-brand-green-400 bg-green-100 dark:bg-brand-green-950/40 px-2 py-1 rounded">
                     <CheckCircle className="w-4 h-4" />
                     Verified
                   </div>
@@ -364,9 +364,9 @@ export default function MerchantSignupPage() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg space-y-3"
+                  className="mt-3 p-4 bg-green-50 dark:bg-brand-green-950/10 border border-green-200 dark:border-brand-green-900/30 rounded-lg space-y-3"
                 >
-                  <p className="text-xs text-green-900 font-medium">
+                  <p className="text-xs text-green-900 dark:text-green-300 font-medium">
                     Enter the OTP sent to <strong>{form.email}</strong>
                   </p>
                   <div className="flex gap-2">
@@ -377,7 +377,7 @@ export default function MerchantSignupPage() {
                       placeholder="000000"
                       aria-label="OTP"
                       maxLength="6"
-                      className="flex-1 px-3 py-2 bg-white border border-green-300 rounded text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-brand-green-600"
+                      className="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-green-300 dark:border-brand-green-800 rounded text-sm font-mono text-center text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-green-600"
                     />
                     <button
                       onClick={verifyOtp}
@@ -388,7 +388,7 @@ export default function MerchantSignupPage() {
                     </button>
                   </div>
                   {timer > 0 ? (
-                    <p className="text-xs text-slate-500">Resend in {formatTimer(timer)}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Resend in {formatTimer(timer)}</p>
                   ) : (
                     <button
                       onClick={sendOtp}
@@ -403,7 +403,7 @@ export default function MerchantSignupPage() {
 
             {/* Shop Name */}
             <div>
-              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wide mb-2">
                 Shop Name
               </label>
               <div className="relative">
@@ -414,22 +414,23 @@ export default function MerchantSignupPage() {
                   onChange={(e) => updateField('shopName', e.target.value)}
                   placeholder="Your shop name"
                   aria-label="Shop Name"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white transition"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white dark:focus:bg-slate-950 transition"
                 />
               </div>
             </div>
 
             {/* Category */}
             <div>
-              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wide mb-2">
                 Category
               </label>
               <div className="relative">
                 <button
+                  type="button"
                   onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                  className="w-full flex items-center justify-between pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white transition"
+                  className="w-full flex items-center justify-between pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white dark:focus:bg-slate-950 transition"
                 >
-                  <span className={form.category ? 'text-slate-900' : 'text-slate-400'}>
+                  <span className={form.category ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'}>
                     {form.category || 'Select category'}
                   </span>
                   <ChevronDown className={`w-5 h-5 text-slate-400 transition ${showCategoryDropdown ? 'rotate-180' : ''}`} />
@@ -442,19 +443,20 @@ export default function MerchantSignupPage() {
                       initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
-                      className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-lg z-10"
+                      className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg z-10"
                     >
                       {CATEGORIES.map((cat) => (
                         <button
                           key={cat}
+                          type="button"
                           onClick={() => {
                             updateField('category', cat);
                             setShowCategoryDropdown(false);
                           }}
                           className={`w-full text-left px-4 py-2.5 text-sm transition ${
                             form.category === cat
-                              ? 'bg-brand-green-100 text-brand-green-900 font-bold'
-                              : 'hover:bg-slate-100'
+                              ? 'bg-brand-green-100 dark:bg-brand-green-950/40 text-brand-green-900 dark:text-brand-green-300 font-bold'
+                              : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-900 dark:text-slate-100'
                           }`}
                         >
                           {cat}
@@ -468,27 +470,28 @@ export default function MerchantSignupPage() {
 
             {/* Location */}
             <div>
-              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wide mb-2">
                 Shop Location
               </label>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+              <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
                 <div className="flex items-start gap-3">
                   <MapPin className={`w-5 h-5 mt-0.5 shrink-0 ${location ? 'text-brand-green-600' : 'text-slate-400'}`} />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                       {form.address || (location ? 'Location captured' : 'Not set yet')}
                     </p>
                     {location && (
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
                       </p>
                     )}
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={getLocation}
                   disabled={locLoading}
-                  className="w-full py-2 text-sm font-bold text-brand-green-600 hover:bg-white border border-brand-green-600 rounded transition disabled:opacity-50"
+                  className="w-full py-2 text-sm font-bold text-brand-green-600 dark:text-brand-green-400 hover:bg-white dark:hover:bg-slate-950 border border-brand-green-600 rounded transition disabled:opacity-50"
                 >
                   {locLoading ? 'Getting location...' : location ? 'Change Location' : 'Get Location'}
                 </button>
@@ -497,7 +500,7 @@ export default function MerchantSignupPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wide mb-2">
                 Password
               </label>
               <div className="relative">
@@ -508,9 +511,10 @@ export default function MerchantSignupPage() {
                   onChange={(e) => updateField('password', e.target.value)}
                   placeholder="Min 6 characters"
                   aria-label="Password"
-                  className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white transition"
+                  className="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white dark:focus:bg-slate-950 transition"
                 />
                 <button
+                  type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600"
                 >
@@ -521,15 +525,15 @@ export default function MerchantSignupPage() {
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wide mb-2">
                 Confirm Password
               </label>
               <div className={`relative border rounded-lg transition ${
                 passwordsMismatch
-                  ? 'border-red-300 bg-red-50'
+                  ? 'border-red-300 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20'
                   : passwordsMatch
-                  ? 'border-brand-green-600 bg-green-50'
-                  : 'border-slate-200 bg-slate-50'
+                  ? 'border-brand-green-600 bg-green-50 dark:bg-brand-green-950/20'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900'
               }`}>
                 <Lock className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
                 <input
@@ -538,9 +542,10 @@ export default function MerchantSignupPage() {
                   onChange={(e) => updateField('confirmPassword', e.target.value)}
                   placeholder="Re-enter your password"
                   aria-label="Confirm Password"
-                  className="w-full pl-10 pr-10 py-3 bg-transparent text-sm focus:outline-none"
+                  className="w-full pl-10 pr-10 py-3 bg-transparent text-sm text-slate-900 dark:text-slate-100 focus:outline-none"
                 />
                 <button
+                  type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
                   className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600"
                 >
@@ -553,7 +558,7 @@ export default function MerchantSignupPage() {
                 </p>
               )}
               {passwordsMatch && (
-                <p className="mt-1 text-xs text-brand-green-600 flex items-center gap-1">
+                <p className="mt-1 text-xs text-brand-green-600 dark:text-brand-green-400 flex items-center gap-1">
                   <CheckCircle className="w-3 h-3" /> Passwords match
                 </p>
               )}
@@ -587,13 +592,13 @@ export default function MerchantSignupPage() {
 
             {/* Footer */}
             <div className="text-center pt-4">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 Already have an account?{' '}
                 <Link href="/merchant/login" className="text-brand-green-600 font-bold hover:underline">
                   Login
                 </Link>
               </p>
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                 Buying instead?{' '}
                 <Link href="/customer/signup" className="text-brand-green-600 font-bold hover:underline">
                   Sign up as customer

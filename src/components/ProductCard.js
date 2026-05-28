@@ -85,7 +85,6 @@ export default function ProductCard({ item, showShopInfo = true }) {
           <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 min-h-8 leading-snug">
             {item.name}
           </h4>
-          <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">{item.description || 'No description available'}</p>
         </div>
 
         <div>

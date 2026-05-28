@@ -42,9 +42,9 @@ export default function BottomNav() {
           position: fixed;
           bottom: 0; left: 0; right: 0;
           z-index: 90;
-          background: rgba(250,250,247,0.97);
+          background: var(--bottom-nav-bg, rgba(250,250,247,0.97));
           backdrop-filter: blur(24px) saturate(200%);
-          border-top: 1px solid rgba(26,92,58,0.11);
+          border-top: 1px solid var(--bottom-nav-border, rgba(26,92,58,0.11));
           padding: 8px 16px;
           padding-bottom: calc(8px + env(safe-area-inset-bottom));
           justify-content: space-around;
@@ -65,7 +65,7 @@ export default function BottomNav() {
           font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
           font-size: 10px;
           font-weight: 500;
-          color: #9aada2;
+          color: var(--nav-item-inactive-color, #9aada2);
           transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
           letter-spacing: 0.01em;
           border: none;
@@ -74,12 +74,12 @@ export default function BottomNav() {
           position: relative;
         }
         .dkn-nav-item:hover {
-          color: #1a5c3a;
-          background: #eaf5ee;
+          color: var(--nav-item-active-color, #1a5c3a);
+          background: var(--nav-item-active-bg, #eaf5ee);
         }
         .dkn-nav-item.active {
-          color: #1a5c3a;
-          background: #eaf5ee;
+          color: var(--nav-item-active-color, #1a5c3a);
+          background: var(--nav-item-active-bg, #eaf5ee);
           font-weight: 700;
         }
         .dkn-nav-item.active .dkn-nav-icon {
@@ -105,7 +105,7 @@ export default function BottomNav() {
           top: 4px; left: 50%; transform: translateX(-50%);
           width: 4px; height: 4px;
           border-radius: 50%;
-          background: #1a5c3a;
+          background: var(--nav-item-active-color, #1a5c3a);
         }
       `}</style>
 

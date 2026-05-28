@@ -12,9 +12,10 @@ import { useUserCoordinates } from '@/hooks/useUserCoordinates';
 import {
   ArrowLeft, Phone, MapPin, Share2, Heart, Smartphone, Zap, Compass, ShoppingBag, ChevronRight, Search, X, Sparkles
 } from 'lucide-react';
+import AdBanner from '@/components/AdBanner';
 
 const API_BASE_URL = 'https://dukan-backend-0cc9.onrender.com';
-const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=60';
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80';
 
 const normalizeImageUrl = (img) => {
   if (!img || typeof img !== 'string') return '';
@@ -141,12 +142,7 @@ const ItemModal = ({ item, visible, onClose }) => {
                 {item.name}
               </h2>
 
-              {/* Description */}
-              {item.description && (
-                <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-6">
-                  {item.description}
-                </p>
-              )}
+
 
               {/* Stock Status */}
               {item.track_quantity && (
@@ -210,12 +206,31 @@ export default function ShopDetailPage() {
   const { user } = useAuth();
   
   const { lat, lon, isLoaded } = useUserCoordinates();
-  const [isFavorited, setIsFavorited] = useState(false);
+  const [faves, setFaves] = useState([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      setMounted(true);
+    });
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('favorites');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          Promise.resolve().then(() => {
+            setFaves(parsed);
+          });
+        } catch (e) {}
+      }
+    }
+  }, []);
   const [loadingFav, setLoadingFav] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [offerIdx, setOfferIdx] = useState(0);
   const searchInputRef = useRef(null);
   const favScale = useRef(1);
 
@@ -242,6 +257,7 @@ export default function ShopDetailPage() {
   });
 
   const { shop = {}, banners = [], media = [], items = [] } = data;
+  const isFavorited = shop?.id ? faves.includes(shop.id) : false;
   const isPremium = shop.plan === 'pro';
   const galleryImages = Array.isArray(media)
     ? media.map((entry) => normalizeImageUrl(entry?.image || entry?.src || entry?.url)).filter(Boolean)
@@ -265,14 +281,6 @@ export default function ShopDetailPage() {
     return `${Math.round(d)} km`;
   };
 
-  // Check if favorite
-  useEffect(() => {
-    if (user && shop.id) {
-      const faves = JSON.parse(localStorage.getItem('favorites') || '[]');
-      setIsFavorited(faves.includes(shop.id));
-    }
-  }, [user, shop.id]);
-
   // Focus search input when showing search
   useEffect(() => {
     if (showSearch && searchInputRef.current) {
@@ -286,21 +294,22 @@ export default function ShopDetailPage() {
       showToast('Please login to save favorites', 'info');
       return;
     }
+    if (!shop.id) return;
     setLoadingFav(true);
     try {
-      const faves = JSON.parse(localStorage.getItem('favorites') || '[]');
-      const updated = isFavorited 
-        ? faves.filter((favId) => favId !== shop.id) 
-        : [...faves, shop.id];
+      const currentFaves = JSON.parse(localStorage.getItem('favorites') || '[]');
+      const updated = currentFaves.includes(shop.id)
+        ? currentFaves.filter((favId) => favId !== shop.id)
+        : [...currentFaves, shop.id];
       localStorage.setItem('favorites', JSON.stringify(updated));
-      setIsFavorited(!isFavorited);
-      showToast(isFavorited ? 'Removed from favorites' : 'Added to favorites', 'success');
+      setFaves(updated);
+      showToast(currentFaves.includes(shop.id) ? 'Removed from favorites' : 'Added to favorites', 'success');
     } catch (err) {
       showToast('Error updating favorites', 'error');
     } finally {
       setLoadingFav(false);
     }
-  }, [user, shop.id, isFavorited, showToast]);
+  }, [user, shop.id, showToast]);
 
   // Handle share
   const handleShare = useCallback(() => {
@@ -328,7 +337,7 @@ export default function ShopDetailPage() {
     setShowItemModal(false);
   }, []);
 
-  if (isLoading) {
+  if (!mounted || isLoading) {
     return (
       <div className="min-h-screen bg-white">
         {/* Skeleton Header */}
@@ -422,7 +431,7 @@ export default function ShopDetailPage() {
             e.currentTarget.src = PLACEHOLDER_IMAGE;
           }}
         />
-        <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/30 to-transparent" />
+
         
         {/* Back Button */}
         <motion.button 
@@ -604,7 +613,7 @@ export default function ShopDetailPage() {
 
       {/* Special Offers Section */}
       <AnimatePresence>
-        {banners.length > 0 && (
+        {isPremium && banners.length > 0 ? (
           <motion.section 
             className="w-full mt-12"
             initial={{ opacity: 0, y: 20 }}
@@ -624,68 +633,138 @@ export default function ShopDetailPage() {
               </div>
               <p className="text-xs text-slate-500">Limited time deals just for you</p>
             </div>
+            <div className="relative max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 group">
+              <div className="overflow-hidden rounded-2xl relative w-full min-h-[160px] flex items-center">
+                {banners.map((banner, idx) => {
+                  const imageUrl = banner.image || banner.src;
+                  const isImageBanner = banner.banner_type === 'image' || !!imageUrl;
+                  const active = idx === offerIdx;
 
-            <div className="space-y-3">
-              {banners.slice(0, 4).map((banner, idx) => {
-                const gradients = [
-                  'from-green-600 via-green-700 to-green-800',
-                  'from-blue-600 via-blue-700 to-blue-800',
-                  'from-purple-600 via-purple-700 to-purple-800',
-                  'from-rose-600 via-rose-700 to-rose-800',
-                ];
-                const bgGradient = gradients[idx % 4];
+                  if (!active) return null;
 
-                return (
-                  <motion.div
-                    key={banner.id || idx}
-                    className={`group relative overflow-hidden bg-linear-to-br ${bgGradient} p-6 sm:p-8 shadow-lg min-h-40 flex flex-col justify-between cursor-pointer mx-4 sm:mx-6 lg:mx-8 rounded-2xl`}
-                    initial={{ opacity: 0, x: -100 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + idx * 0.1 }}
-                    whileHover={{ scale: 1.02, shadow: '2xl' }}
-                  >
-                    {/* Animated Background */}
-                    <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <ShoppingBag className="absolute -right-16 -top-16 w-48 h-48 text-white" />
-                    </div>
+                  if (isImageBanner) {
+                    return (
+                      <motion.div
+                        key={banner.id || idx}
+                        className="w-full aspect-video rounded-2xl relative overflow-hidden bg-slate-100 border border-slate-200/60 shadow-md cursor-pointer"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                        whileHover={{ scale: 1.01 }}
+                      >
+                        <img 
+                          src={normalizeImageUrl(imageUrl)} 
+                          className="w-full h-full object-cover" 
+                          alt="Special Campaign Banner" 
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = PLACEHOLDER_IMAGE;
+                          }}
+                        />
+                      </motion.div>
+                    );
+                  }
 
-                    {/* Content */}
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Zap className="w-5 h-5 text-yellow-300" />
-                        <span className="text-xs uppercase tracking-widest font-black text-white/90">
-                          {banner.discount ? 'Hot Deal' : 'Limited'}
-                        </span>
+                  let bgGradient = 'from-[#0E5C42] via-[#146e4f] to-[#1B7A58]'; // green/emerald
+                  if (banner.template === 'red') {
+                    bgGradient = 'from-[#9B1C1C] via-[#ae2b25] to-[#C0392B]';
+                  } else if (banner.template === 'dark') {
+                    bgGradient = 'from-[#181825] via-[#222232] to-[#2C2C3E]';
+                  }
+
+                  return (
+                    <motion.div
+                      key={banner.id || idx}
+                      className={`w-full min-h-[160px] rounded-2xl relative overflow-hidden bg-linear-to-br ${bgGradient} p-5 sm:p-6 shadow-md flex flex-col justify-between cursor-pointer border border-transparent`}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                      whileHover={{ scale: 1.01 }}
+                    >
+                      {/* Animated Background */}
+                      <div className="absolute inset-0 opacity-10 transition-opacity">
+                        <ShoppingBag className="absolute -right-16 -top-16 w-40 h-40 text-white" />
                       </div>
 
-                      <h3 className="font-black text-white text-base sm:text-lg mb-2 line-clamp-2">
-                        {banner.text || banner.title || banner.name || 'Exclusive Offer'}
-                      </h3>
+                      {/* Content */}
+                      <div className="relative z-10 text-left">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Zap className="w-4 h-4 text-yellow-300" />
+                          <span className="text-[10px] uppercase tracking-widest font-black text-white/90">
+                            {banner.discount ? 'Hot Deal' : 'Limited'}
+                          </span>
+                        </div>
 
-                      {(banner.subtext || banner.description || banner.subtitle) && (
-                        <p className="text-xs sm:text-sm text-white/85 font-medium line-clamp-2">
-                          {banner.subtext || banner.description || banner.subtitle}
-                        </p>
-                      )}
-                    </div>
+                        <h3 className="font-black text-white text-sm sm:text-base mb-1.5 line-clamp-2">
+                          {banner.text || banner.title || banner.name || 'Exclusive Offer'}
+                        </h3>
 
-                    {/* Footer */}
-                    <div className="mt-4 pt-3 border-t border-white/20 flex items-center justify-between relative z-10">
-                      {banner.discount && (
-                        <span className="text-sm sm:text-base font-black text-yellow-300">
-                          {banner.discount}
+                        {(banner.subtext || banner.subtitle) && (
+                          <p className="text-[10.5px] text-white/85 font-medium line-clamp-2">
+                            {banner.subtext || banner.subtitle}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="mt-3 pt-2.5 border-t border-white/20 flex items-center justify-between relative z-10 text-left">
+                        {banner.discount && (
+                          <span className="text-xs sm:text-sm font-black text-yellow-300">
+                            {banner.discount}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-bold text-white/80 ml-auto flex items-center gap-1 group-hover:text-white transition-colors">
+                          Shop Now
+                          <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                         </span>
-                      )}
-                      <span className="text-xs font-bold text-white/80 ml-auto flex items-center gap-1 group-hover:text-white transition-colors">
-                        Shop Now
-                        <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Left Arrow */}
+              {banners.length > 1 && (
+                <button
+                  onClick={() => setOfferIdx((prev) => (prev - 1 + banners.length) % banners.length)}
+                  className="absolute left-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-md select-none"
+                >
+                  &#10094;
+                </button>
+              )}
+
+              {/* Right Arrow */}
+              {banners.length > 1 && (
+                <button
+                  onClick={() => setOfferIdx((prev) => (prev + 1) % banners.length)}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-md select-none"
+                >
+                  &#10095;
+                </button>
+              )}
+
+              {/* Dots / Badges */}
+              {banners.length > 1 && (
+                <div className="flex justify-center gap-2 mt-3.5 z-20">
+                  {banners.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setOfferIdx(i)}
+                      className={`w-2 h-2 rounded-full border transition-all cursor-pointer ${
+                        offerIdx === i
+                          ? 'bg-[#0E5C42] border-[#0E5C42] scale-110'
+                          : 'bg-slate-200 dark:bg-slate-800 border-transparent hover:bg-slate-350'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </motion.section>
+        ) : (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+            <AdBanner />
+          </div>
         )}
       </AnimatePresence>
 

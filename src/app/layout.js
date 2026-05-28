@@ -17,7 +17,7 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "Dukan – Discover Nearby Local Shops in Nagaland",
+  title: "Dukan – Discover Nearby Local Shops",
 
   description:
     "Discover nearby local shops, products, and offers with Dukan. Explore grocery, fashion, electronics, restaurants, and more near you in Nagaland.",
@@ -62,7 +62,7 @@ export default function RootLayout({ children }) {
       data-scroll-behavior="smooth"
       className={`${inter.variable} ${outfit.variable} h-full scroll-smooth antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-white text-slate-900 pb-20 md:pb-0">
+      <body className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 md:pb-0">
         <Providers>
 
           <main className="grow flex flex-col">

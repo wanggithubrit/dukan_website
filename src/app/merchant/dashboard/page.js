@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import api from '@/utils/api';
+import AdBanner from '@/components/AdBanner';
 import { 
   Store, 
   ShoppingBag, 
@@ -25,7 +26,8 @@ import {
   X,
   Lock,
   RefreshCw,
-  Minus
+  Minus,
+  CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -78,6 +80,7 @@ export default function MerchantDashboard() {
     imagePreview: '',
   });
   const [creatingBanner, setCreatingBanner] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Gallery Cover states
   const [uploadingGallery, setUploadingGallery] = useState(false);
@@ -129,7 +132,9 @@ export default function MerchantDashboard() {
   }, [user, showToast]);
 
   useEffect(() => {
-    fetchDashboardData();
+    Promise.resolve().then(() => {
+      fetchDashboardData();
+    });
   }, [fetchDashboardData]);
 
   // Handle explicit sync refresh trigger action from items.js
@@ -245,7 +250,7 @@ export default function MerchantDashboard() {
     setLoadingProducts(true);
     try {
       if (editingProduct) {
-        await api.post(`/item/update/${productForm.id}/`, formData, {
+        await api.put(`/item/update/${productForm.id}/`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         showToast('Product updated successfully', 'success');
@@ -363,37 +368,123 @@ export default function MerchantDashboard() {
     }
   };
 
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined') {
+        resolve(false);
+        return;
+      }
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handlePlanUpgrade = async () => {
     try {
-      await api.post('/shop/upgrade/');
-      showToast('Upgrade Successful! Shop is now PRO.', 'success');
-      fetchDashboardData();
+      const isLoaded = await loadRazorpay();
+      if (!isLoaded) {
+        showToast('Razorpay SDK failed to load. Please check your internet connection.', 'error');
+        return;
+      }
+
+      // 1️⃣ Create order via backend API
+      const res = await api.post('/payment/create-order/');
+      const orderData = res.data;
+
+      // 2️⃣ Open Razorpay Checkout
+      const options = {
+        key: orderData.key || 'rzp_test_XXXXXXXXXXXXXX',
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'Dukan',
+        description: 'Dukan Pro Plan',
+        order_id: orderData.order_id,
+        prefill: {
+          email: user?.email || '',
+          contact: '9999999999',
+        },
+        handler: async function (response) {
+          // 3️⃣ Verify payment via backend API
+          try {
+            await api.post('/shop/upgrade/', {
+              order_id: response.razorpay_order_id,
+              payment_id: response.razorpay_payment_id,
+              signature: response.razorpay_signature
+            });
+            showToast('Upgrade Successful! Shop is now PRO. 🎉', 'success');
+            fetchDashboardData();
+          } catch (err) {
+            console.error(err);
+            showToast('Payment verification failed', 'error');
+          }
+        },
+        theme: { color: '#2F5D50' },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (err) {
       console.error(err);
-      showToast('Failed to upgrade plan', 'error');
+      showToast('Payment initialization failed', 'error');
     }
   };
 
   // ==================== LIFETIME QUANTITY TRACKING UNLOCK ====================
   const handleUnlockQuantityTracking = async () => {
     try {
-      const res = await api.post('/payment/quantity/create/');
-      if (res.data && res.data.order_id) {
-        // Implement web checkout handling or mock success handling for testing workspace parameters
-        alert('Web Order Matrix Configured! Verifying simulation payment payload...');
-        
-        // Mock verification call payload structure equivalent to items.js verification handling
-        await api.post('/payment/quantity/verify/', {
-          order_id: res.data.order_id,
-          payment_id: "pay_web_simulated_token",
-          signature: "sig_web_simulated_hash"
-        });
-        showToast('Inventory Features Unlocked Across Ecosystem 🎉', 'success');
-        fetchDashboardData();
+      const isLoaded = await loadRazorpay();
+      if (!isLoaded) {
+        showToast('Razorpay SDK failed to load. Please check your internet connection.', 'error');
+        return;
       }
+
+      // 1️⃣ Create order via backend API
+      const res = await api.post('/payment/quantity/create/');
+      const orderData = res.data;
+
+      // 2️⃣ Open Razorpay Checkout
+      const options = {
+        key: orderData.key || 'rzp_test_XXXXXXXXXXXXXX',
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'Dukan',
+        description: 'Inventory Management Unlock',
+        order_id: orderData.order_id,
+        prefill: {
+          email: user?.email || '',
+          contact: '',
+        },
+        handler: async function (response) {
+          // 3️⃣ Verify payment via backend API
+          try {
+            await api.post('/payment/quantity/verify/', {
+              order_id: response.razorpay_order_id,
+              payment_id: response.razorpay_payment_id,
+              signature: response.razorpay_signature
+            });
+            showToast('Inventory Features Unlocked Across Ecosystem 🎉', 'success');
+            fetchDashboardData();
+          } catch (err) {
+            console.error(err);
+            showToast('Payment verification failed', 'error');
+          }
+        },
+        theme: { color: '#147A5A' },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (err) {
       console.error(err);
-      showToast('Payment system error or initialization cancellation', 'error');
+      showToast('Payment initialization failed', 'error');
     }
   };
 
@@ -465,12 +556,10 @@ export default function MerchantDashboard() {
           {/* Navigation Links */}
           <nav className="flex flex-col gap-1 text-left">
             {[
-              { id: 'overview', label: 'Dashboard Overview', icon: TrendingUp },
-              { id: 'profile', label: 'Store Profile Settings', icon: Store },
-              { id: 'products', label: 'Product Manager', icon: ShoppingBag },
-              { id: 'banners', label: 'Offers & Banners', icon: Gift },
-              { id: 'gallery', label: 'Gallery Covers', icon: ImageIcon },
-              { id: 'referrals', label: 'Plan & Referrals', icon: Zap },
+              { id: 'overview', label: 'Home Dashboard', icon: TrendingUp },
+              { id: 'products', label: 'Inventory Catalog', icon: ShoppingBag },
+              { id: 'profile', label: 'Store Profile', icon: Store },
+              { id: 'referrals', label: 'Invite & Upgrades', icon: Zap },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -547,74 +636,299 @@ export default function MerchantDashboard() {
               exit={{ opacity: 0, y: 4 }}
               className="space-y-6"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-900 pb-5">
+              {/* Header block mirroring app welcome */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
                 <div>
-                  <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white font-outfit">
-                    Dashboard Overview
-                  </h2>
-                  <p className="text-[11px] text-slate-400 font-medium">Real-time stats and metrics for your Dukand store</p>
+                  <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block">Good morning</span>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white font-outfit">Dashboard</h2>
                 </div>
-
-                <div className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 border shadow-sm self-start ${
+                {/* PRO badge indicator */}
+                <div className={`px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 border shadow-sm self-start ${
                   isPro 
-                    ? 'bg-brand-green-50 dark:bg-brand-green-950/50 border-brand-green-100 dark:border-brand-green-900/50 text-brand-green-700 dark:text-brand-green-400'
+                    ? 'bg-brand-green-50 dark:bg-brand-green-950/40 border-brand-green-100 dark:border-brand-green-900/60 text-brand-green-700 dark:text-brand-green-400 font-extrabold'
                     : 'bg-slate-50 dark:bg-slate-900 border-slate-200/60 dark:border-slate-800 text-slate-500'
                 }`}>
                   <BadgeCheck className="w-4 h-4 text-brand-green-600 dark:text-brand-green-400" />
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider font-outfit">
-                    {isPro ? 'Pro Active Business' : 'Free Standard Account'}
-                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider font-outfit">{isPro ? 'Pro Account' : 'Standard Account'}</span>
                 </div>
               </div>
 
-              {/* Grid Cards Container */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { label: 'Followers Count', value: stats.followers || 0, icon: Users, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-400' },
-                  { label: 'Products Listed', value: stats.items || 0, icon: ShoppingBag, color: 'text-brand-green-600 bg-brand-green-50 dark:bg-brand-green-950/40 dark:text-brand-green-400' },
-                  { label: 'Promotions active', value: stats.offers || 0, icon: Gift, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400' },
-                  { label: 'Media Covers', value: stats.cover_images || 0, icon: ImageIcon, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40 dark:text-purple-400' },
-                ].map((card, i) => {
-                  const Icon = card.icon;
-                  return (
-                    <div key={i} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 p-4 rounded-xl shadow-sm flex items-center justify-between gap-2">
-                      <div className="overflow-hidden">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">{card.label}</span>
-                        <span className="text-xl font-black text-slate-900 dark:text-white mt-0.5 block font-outfit">{card.value}</span>
-                      </div>
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${card.color}`}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Analytics graph window block */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
-                <h3 className="font-extrabold text-slate-900 dark:text-white text-xs mb-6 flex items-center gap-1.5 font-outfit uppercase tracking-wider text-slate-400">
-                  <TrendingUp className="w-4 h-4 text-brand-green-600" /> Store Traffic (Weekly Simulation)
-                </h3>
-                
-                <div className="w-full h-40 mt-4 flex items-end justify-between px-2 pb-1 border-b border-slate-100 dark:border-slate-800">
-                  {[32, 55, 42, 81, 60, 105, 92].map((value, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1.5 flex-grow group">
-                      <div className="w-full max-w-[28px] sm:max-w-[42px] bg-slate-50 dark:bg-slate-800/50 rounded-t-lg relative flex items-end h-32 justify-center">
-                        <div 
-                          style={{ height: `${(value / 110) * 100}%` }} 
-                          className="w-full rounded-t-md bg-gradient-to-t from-brand-green-700 to-brand-green-500 group-hover:from-brand-green-600 transition-all duration-300 cursor-pointer relative"
-                        >
-                          <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white text-[9px] font-black py-0.5 px-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md z-10">
-                            {value} visitors
-                          </span>
-                        </div>
-                      </div>
-                      <span className="text-[9px] font-bold text-slate-400">
-                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]}
+              {/* Shop Hero Card */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-brand-green-900 flex items-center justify-center font-black text-white text-lg shrink-0">
+                    {s.name?.[0]?.toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-900 dark:text-white font-outfit truncate max-w-[200px] sm:max-w-xs">{s.name}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`w-2 h-2 rounded-full ${s.is_open ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                      <span className={`text-xs font-bold ${s.is_open ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                        {s.is_open ? 'Open for business' : 'Closed'}
                       </span>
                     </div>
-                  ))}
+                  </div>
                 </div>
+                
+                <button 
+                  onClick={handleStatusToggle}
+                  className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-xs font-black tracking-wider uppercase transition-all shadow-xs shrink-0 ${
+                    s.is_open 
+                      ? 'bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/60'
+                      : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/20 text-brand-green-700 dark:text-brand-green-400 border-emerald-200 dark:border-brand-green-900/60'
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${s.is_open ? 'bg-red-500' : 'bg-brand-green-650'}`} />
+                  <span>{s.is_open ? 'Close Shop' : 'Open Shop'}</span>
+                </button>
+              </div>
+
+              {/* Stats Row */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-around divide-x divide-slate-100 dark:divide-slate-800">
+                <div className="flex flex-col items-center flex-1 gap-1 text-center">
+                  <div className="w-8 h-8 rounded-lg bg-brand-green-50 dark:bg-brand-green-950/40 flex items-center justify-center text-brand-green-600 dark:text-brand-green-400 mb-1">
+                    <ImageIcon className="w-4 h-4" />
+                  </div>
+                  <span className="text-xl font-black text-slate-900 dark:text-white font-outfit">{gallery.length}</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Posts</span>
+                </div>
+                <div className="flex flex-col items-center flex-1 gap-1 text-center">
+                  <div className="w-8 h-8 rounded-lg bg-brand-green-50 dark:bg-brand-green-950/40 flex items-center justify-center text-brand-green-600 dark:text-brand-green-400 mb-1">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <span className="text-xl font-black text-slate-900 dark:text-white font-outfit">{stats.followers || 0}</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Followers</span>
+                </div>
+              </div>
+
+              {/* Quick Actions Row */}
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Quick Actions</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => {
+                      const fileInput = document.getElementById('dashboard-gallery-file-input');
+                      if (fileInput) fileInput.click();
+                    }}
+                    className="bg-brand-green-950 hover:bg-slate-950 dark:bg-slate-900 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800 text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+                      <Plus className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-[10px] font-bold tracking-wide uppercase">New Post</span>
+                  </button>
+                  
+                  <Link
+                    href={`/shop/${s.id}`}
+                    target="_blank"
+                    className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-brand-green-50 dark:bg-brand-green-950 flex items-center justify-center">
+                      <Store className="w-5 h-5 text-brand-green-600 dark:text-brand-green-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 tracking-wide uppercase">Store</span>
+                  </Link>
+
+                  <button
+                    onClick={() => setActiveTab('profile')}
+                    className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-brand-green-50 dark:bg-brand-green-950 flex items-center justify-center">
+                      <Edit className="w-5 h-5 text-brand-green-600 dark:text-brand-green-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 tracking-wide uppercase">Settings</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Dynamic Sponsored Promotion AdBanner matching Mobile Spacing */}
+              <AdBanner />
+
+              {/* Banners carousel block */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Banners</h4>
+                    {bannersList.length > 0 && (
+                      <span className="text-[10px] font-black bg-brand-green-50 text-brand-green-700 px-2 py-0.5 rounded-full">{bannersList.length}</span>
+                    )}
+                  </div>
+                  {isPro && (
+                    <button
+                      onClick={() => setCreatingBanner(!creatingBanner)}
+                      className="text-xs font-black text-brand-green-600 hover:text-brand-green-700 flex items-center gap-1"
+                    >
+                      {creatingBanner ? 'Dismiss Upload' : '+ Upload Promotion'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Creating Banner Inline Form */}
+                {creatingBanner && (
+                  <form onSubmit={handleBannerSubmit} className="bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 p-4 rounded-2xl flex flex-col gap-3 shadow-inner">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block mb-1">Campaign Headline *</label>
+                        <input
+                          type="text" required
+                          value={bannerForm.title}
+                          onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                          placeholder="e.g. Mega Clearance Sale"
+                          className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block mb-1">Subtext Line</label>
+                        <input
+                          type="text"
+                          value={bannerForm.subtitle}
+                          onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                          placeholder="e.g. Valid until Sunday midnight"
+                          className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block mb-1">Discount Rate</label>
+                        <input
+                          type="text"
+                          value={bannerForm.discount}
+                          onChange={(e) => setBannerForm({ ...bannerForm, discount: e.target.value })}
+                          placeholder="e.g. 50% OFF"
+                          className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block mb-1">Cover Graphic Image</label>
+                        <input
+                          type="file" accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setBannerForm({
+                                ...bannerForm,
+                                imageFile: file,
+                                imagePreview: URL.createObjectURL(file)
+                              });
+                            }
+                          }}
+                          className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-slate-100 dark:file:bg-slate-800 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    {bannerForm.imagePreview && (
+                      <div className="relative aspect-video max-w-[240px] rounded-xl overflow-hidden border">
+                        <img src={bannerForm.imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <button
+                      type="submit"
+                      className="w-full bg-brand-green-600 hover:bg-brand-green-700 text-white font-black text-xs py-2.5 rounded-xl transition-all"
+                    >
+                      Publish Banner
+                    </button>
+                  </form>
+                )}
+
+                {/* Horizontally scrolling list of banners */}
+                {!isPro ? (
+                  <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 p-6 rounded-2xl text-center flex flex-col items-center">
+                    <AlertCircle className="w-8 h-8 text-amber-500 mb-2" />
+                    <h5 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider font-outfit">Promotion Features Locked</h5>
+                    <p className="text-[10px] text-slate-400 mt-1 max-w-xs leading-relaxed">
+                      Marketing banners require a Pro upgrade. Get active banner ranking placements now!
+                    </p>
+                    <button 
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="mt-3 bg-brand-green-600 hover:bg-brand-green-700 text-white font-bold text-[10px] px-4 py-2 rounded-xl uppercase tracking-wider shadow-sm transition-all"
+                    >
+                      Upgrade to Pro
+                    </button>
+                  </div>
+                ) : bannersList.length === 0 ? (
+                  <div className="text-center py-6 border border-dashed border-slate-200/60 dark:border-slate-800 rounded-2xl text-xs text-slate-400">
+                    No promotional banners active. Click &quot;+ Upload Promotion&quot; to add one.
+                  </div>
+                ) : (
+                  <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar scroll-smooth snap-x">
+                    {bannersList.map((banner) => (
+                      <div 
+                        key={banner.id} 
+                        className="snap-start shrink-0 w-72 h-36 rounded-2xl relative overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800"
+                      >
+                        {banner.image ? (
+                          <img src={banner.image} className="w-full h-full object-cover" alt="Campaign Banner" />
+                        ) : (
+                          <div className="w-full h-full bg-brand-green-700 text-white p-5 flex flex-col justify-between text-left">
+                            <div>
+                                {banner.discount && <span className="text-[9px] uppercase font-black bg-brand-green-950 text-brand-green-200 px-2 py-0.5 rounded-full tracking-wider inline-block mb-1">{banner.discount}</span>}
+                              <h5 className="font-black text-sm text-white truncate leading-snug">{banner.title}</h5>
+                            </div>
+                            <p className="text-[10px] text-white/80 truncate">{banner.subtitle}</p>
+                          </div>
+                        )}
+                        
+                        {/* Delete Badge */}
+                        <button
+                          onClick={() => handleDeleteBanner(banner.id)}
+                          className="absolute top-3 right-3 w-6 h-6 rounded-full bg-black/45 hover:bg-black/60 flex items-center justify-center text-white transition-colors"
+                          title="Remove Banner"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Gallery posts block */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Gallery</h4>
+                    {gallery.length > 0 && (
+                      <span className="text-[10px] font-black bg-brand-green-50 text-brand-green-700 px-2 py-0.5 rounded-full">{gallery.length}</span>
+                    )}
+                  </div>
+
+                  {/* File upload label triggers dynamic media upload */}
+                  <label className="text-xs font-black text-brand-green-600 hover:text-brand-green-700 cursor-pointer flex items-center gap-1">
+                    <span>{uploadingGallery ? 'Uploading...' : '+ Upload Photo'}</span>
+                    <input 
+                      id="dashboard-gallery-file-input"
+                      type="file" 
+                      accept="image/*" 
+                      disabled={uploadingGallery} 
+                      onChange={handleGalleryUpload} 
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+
+                {gallery.length === 0 ? (
+                  <div className="text-center py-12 border border-dashed border-slate-200/60 dark:border-slate-800 rounded-2xl text-xs text-slate-400">
+                    No gallery photos uploaded. Click &quot;+ Upload Photo&quot; to add one.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {gallery.map((img) => (
+                      <div key={img.id} className="aspect-square rounded-2xl overflow-hidden bg-slate-50 border dark:border-slate-800 relative group shadow-sm">
+                        <img src={img.image} className="w-full h-full object-cover" alt="Gallery cover item" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button
+                            onClick={() => handleDeleteMedia(img.id)}
+                            className="bg-white text-red-600 p-2.5 rounded-xl shadow-md hover:scale-105 transition-transform"
+                            title="Remove Post"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -1070,7 +1384,7 @@ export default function MerchantDashboard() {
                   </div>
                   {!isPro && (
                     <button 
-                      onClick={handlePlanUpgrade}
+                      onClick={() => setShowUpgradeModal(true)}
                       className="bg-brand-green-600 hover:bg-brand-green-700 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg tracking-wide uppercase shadow-sm"
                     >
                       Instant Upgrade
@@ -1154,16 +1468,7 @@ export default function MerchantDashboard() {
                 />
               </div>
 
-              <div>
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block mb-1">Description / Spec details</label>
-                <textarea 
-                  rows="2"
-                  value={productForm.description}
-                  onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                  placeholder="e.g. Net weight 500ml, fresh local produce"
-                  className="w-full text-xs p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-brand-green-600"
-                />
-              </div>
+
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1303,6 +1608,68 @@ export default function MerchantDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* UPGRADE MODAL MAPPED 1:1 FROM APP MERCHANT PROFILE */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 text-left relative animate-slide-up">
+            <button 
+              onClick={() => setShowUpgradeModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-650 dark:hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white font-outfit">Upgrade to PRO</h3>
+              <p className="text-xs text-slate-400 font-medium mt-1">Take your shop to the next level</p>
+            </div>
+
+            <div className="space-y-3 my-2 text-slate-600 dark:text-slate-350 text-xs font-bold">
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-brand-green-600 shrink-0 mt-0.5" />
+                <span>Showcase up to 100 products in your shop</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-brand-green-600 shrink-0 mt-0.5" />
+                <span>Get a premium verified badge on your shop</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-brand-green-600 shrink-0 mt-0.5" />
+                <span>Appear before free shops when distance is the same</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-brand-green-600 shrink-0 mt-0.5" />
+                <span>Boost visibility with a featured banner</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-brand-green-600 shrink-0 mt-0.5" />
+                <span>Highlight your shop with 5 cover images</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-brand-green-600 shrink-0 mt-0.5" />
+                <span>Engage customers with instant notifications</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowUpgradeModal(false);
+                handlePlanUpgrade();
+              }}
+              className="w-full bg-brand-green-600 hover:bg-brand-green-700 text-white font-black text-xs py-3.5 rounded-xl transition-all shadow-md text-center"
+            >
+              Pay ₹40 / month
+            </button>
+
+            <button 
+              onClick={() => setShowUpgradeModal(false)}
+              className="w-full text-center text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              Maybe Later
+            </button>
           </div>
         </div>
       )}
