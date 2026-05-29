@@ -66,10 +66,19 @@ export default function FavoritesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => router.back()}
+              onClick={() => {
+                if (user?.role === 'merchant') {
+                  router.push('/merchant/dashboard?tab=discover');
+                } else if (typeof window !== 'undefined' && window.history.length > 2 && document.referrer && !document.referrer.includes('/customer/login')) {
+                  router.back();
+                } else {
+                  router.push('/');
+                }
+              }}
               className="p-2 hover:bg-slate-100 rounded-lg transition"
+              aria-label="Go Back"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5 text-slate-800" />
             </button>
             
             <div>
@@ -107,18 +116,15 @@ export default function FavoritesPage() {
 
         {/* Empty favorites list */}
         {!isLoading && !error && shops.length === 0 && (
-          <div className="text-center py-16 bg-slate-50 rounded-xl border border-slate-200 p-8 max-w-md mx-auto flex flex-col items-center">
-            <Heart className="w-12 h-12 text-slate-300 mb-4" />
+          <div className="text-center py-16 bg-[#F8FAF9] rounded-3xl border border-[#E0EAE6] p-8 max-w-md mx-auto flex flex-col items-center">
+            <Heart className="w-12 h-12 text-slate-300 mb-3" />
             <h3 className="font-bold text-slate-900 mb-1">Your favorites list is empty</h3>
-            <p className="text-sm text-slate-600 mb-6">
-              Save your favorite shops to keep track of them
-            </p>
+            <p className="text-sm text-slate-500 mb-6">Explore local stores and save them here.</p>
             <Link 
               href="/"
-              className="inline-flex items-center gap-2 bg-brand-green-600 hover:bg-brand-green-700 text-white font-bold text-sm px-5 py-2.5 rounded-lg transition-all"
+              className="px-6 py-2.5 bg-primary hover:bg-brand-green-700 text-white text-sm font-bold rounded-xl shadow-sm transition"
             >
-              <Store className="w-4 h-4" />
-              Explore Shops
+              Discover Shops
             </Link>
           </div>
         )}

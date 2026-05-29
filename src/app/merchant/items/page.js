@@ -3,6 +3,6 @@
 import React from 'react';
 import MerchantDashboardContent from '@/components/MerchantDashboardContent';
 
-export default function MerchantDashboardPage() {
-  return <MerchantDashboardContent defaultTab="overview" />;
+export default function MerchantItemsPage() {
+  return <MerchantDashboardContent defaultTab="products" />;
 }

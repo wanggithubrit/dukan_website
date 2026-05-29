@@ -494,7 +494,7 @@ function SearchContent() {
           <div>
             <h4 className="text-xs font-black text-[#092219] uppercase tracking-wider mb-4">Company</h4>
             <div className="space-y-3 flex flex-col text-xs font-bold text-slate-500">
-              <Link href="/" className="hover:text-[#0A5C43] transition">About Us</Link>
+              <Link href="/about" className="hover:text-[#0A5C43] transition">About Us</Link>
               <Link href="/" className="hover:text-[#0A5C43] transition">Privacy Policy</Link>
             </div>
           </div>

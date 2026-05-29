@@ -526,6 +526,13 @@ export default function ShopDetailPage() {
                     </p>
                   </div>
                 </div>
+
+                {shop.description && (
+                  <div className="mt-3.5 pt-3 border-t border-slate-100/80 text-xs text-slate-600 max-w-xl text-left bg-slate-50/50 p-3 rounded-xl border border-slate-200/40">
+                    <p className="font-semibold text-slate-800 text-[10px] uppercase tracking-wider mb-1">About our Store / Landmark</p>
+                    <p className="leading-relaxed whitespace-pre-wrap">{shop.description}</p>
+                  </div>
+                )}
               </div>
             </div>
 
