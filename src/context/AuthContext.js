@@ -70,7 +70,10 @@ export const AuthProvider = ({ children }) => {
 
       return userData;
     } catch (err) {
-      throw err.error || err.message || 'Login failed';
+      if (err.response && (err.response.status === 400 || err.response.status === 401)) {
+        throw 'Incorrect password or credential';
+      }
+      throw err.response?.data?.error || err.error || err.message || 'Incorrect password or credential';
     }
   };
 

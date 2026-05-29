@@ -75,123 +75,101 @@ const ItemModal = ({ item, visible, onClose }) => {
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="w-full max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto"
+            className="w-[90%] max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 relative"
             onClick={(e) => e.stopPropagation()}
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
           >
-            {/* Product Image */}
-            <div className="relative w-full aspect-square bg-slate-100 overflow-hidden">
+            {/* Close Floating Trigger */}
+            <motion.button
+              onClick={onClose}
+              className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white/80 backdrop-blur-md border border-slate-200/40 flex items-center justify-center shadow-md hover:bg-white transition-all z-20"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <X className="w-4 h-4 text-slate-800" />
+            </motion.button>
+
+            {/* Landscape Product Image */}
+            <div className="relative w-full aspect-[16/11] bg-slate-50 overflow-hidden shrink-0">
               <motion.img
                 src={normalizeImageUrl(item.image) || PLACEHOLDER_IMAGE}
                 alt={item.name}
                 className="w-full h-full object-cover"
-                initial={{ scale: 1.1 }}
+                initial={{ scale: 1.05 }}
                 animate={{ scale: 1 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.4 }}
                 onError={(e) => {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src = PLACEHOLDER_IMAGE;
                 }}
               />
-              <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/15 to-transparent" />
 
-              {/* Close Button */}
-              <motion.button
-                onClick={onClose}
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-lg hover:bg-white transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <X className="w-5 h-5 text-slate-900" />
-              </motion.button>
-            </div>
-
-            {/* Content */}
-            <motion.div
-              className="p-6 sm:p-8"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              {/* Price Badge */}
+              {/* Floating Absolute Price Badge */}
               {item.price !== null && item.price !== undefined && (
-                <motion.div
-                  className="inline-flex items-center gap-2 bg-linear-to-br from-green-50 to-green-100 px-4 py-2 rounded-xl border border-green-200 mb-4"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.15 }}
-                >
-                  <span className="text-2xl font-black text-green-700">
+                <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-xl shadow-xs border border-white/20">
+                  <span className="text-sm font-black text-green-700">
                     ₹{item.price % 1 === 0 ? parseFloat(item.price).toFixed(0) : parseFloat(item.price).toFixed(2)}
                   </span>
-                </motion.div>
+                </div>
               )}
+            </div>
 
-              {/* Title */}
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-2 leading-tight">
-                {item.name}
-              </h2>
+            {/* Details Content */}
+            <div className="p-5 text-left">
+              <div className="space-y-4">
+                {/* Title */}
+                <h2 className="text-base sm:text-lg font-black text-slate-900 leading-snug line-clamp-2">
+                  {item.name}
+                </h2>
 
+                {/* Stock Status */}
+                {item.track_quantity && (
+                  <div>
+                    {item.quantity_status === 'out' && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200/50 font-black text-[9px] uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-700" />
+                        Out of Stock
+                      </span>
+                    )}
+                    {item.quantity_status === 'low' && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200/50 font-black text-[9px] uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-700" />
+                        Only {item.quantity} left
+                      </span>
+                    )}
+                    {item.quantity_status === 'in' && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E6F4EE] text-[#0A5C43] border border-[#0A5C43]/10 font-black text-[9px] uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#0A5C43] animate-pulse" />
+                        {item.quantity ? `${item.quantity} Available` : 'In Stock'}
+                      </span>
+                    )}
+                  </div>
+                )}
 
-
-              {/* Stock Status */}
-              {item.track_quantity && (
-                <motion.div
-                  className="mb-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  {item.quantity_status === 'out' && (
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-100 text-red-700 border border-red-200 font-bold text-sm">
-                      <span className="w-2 h-2 rounded-full bg-red-700" />
-                      Out of Stock
-                    </div>
-                  )}
-                  {item.quantity_status === 'low' && (
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-100 text-yellow-700 border border-yellow-200 font-bold text-sm">
-                      <span className="w-2 h-2 rounded-full bg-yellow-700" />
-                      Only {item.quantity} left
-                    </div>
-                  )}
-                  {item.quantity_status === 'in' && (
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-100 text-green-700 border border-green-200 font-bold text-sm">
-                      <span className="w-2 h-2 rounded-full bg-green-700 animate-pulse" />
-                      {item.quantity || 'In Stock'}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t border-slate-200">
-                <motion.button
-                  onClick={onClose}
-                  className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-900 font-bold hover:bg-slate-50 transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Close
-                </motion.button>
-                <motion.button
-                  className="flex-1 py-3 rounded-xl bg-linear-to-r from-green-600 to-green-700 text-white font-bold hover:shadow-lg transition-shadow"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Contact Shop
-                </motion.button>
+                {/* Footer Action Button */}
+                <div className="pt-4 border-t border-slate-100">
+                  <motion.button
+                    onClick={onClose}
+                    className="w-full py-2.5 rounded-xl bg-[#0A5C43] hover:bg-[#084834] text-white text-[10px] font-black uppercase tracking-wider shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Close Details
+                  </motion.button>
+                </div>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         </motion.div>
       )}
@@ -271,6 +249,15 @@ export default function ShopDetailPage() {
     }, 6000);
     return () => clearInterval(interval);
   }, [galleryImages.length]);
+
+  // Autoplay campaign banners every 6 seconds
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setOfferIdx((current) => (current + 1) % banners.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [banners.length]);
   
   // Format distance
   const formatDistance = (distance) => {
@@ -633,8 +620,11 @@ export default function ShopDetailPage() {
               </div>
               <p className="text-xs text-slate-500">Limited time deals just for you</p>
             </div>
-            <div className="relative max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 group">
-              <div className="overflow-hidden rounded-2xl relative w-full min-h-[160px] flex items-center">
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 group">
+              {/* Background Glow */}
+              <div className="absolute inset-0 bg-linear-to-r from-green-500/10 to-emerald-500/10 blur-3xl -z-10 rounded-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              <div className="overflow-hidden rounded-3xl relative w-full min-h-[150px] sm:min-h-[180px] flex items-center border border-slate-100 shadow-sm group-hover:shadow-md transition-shadow">
                 {banners.map((banner, idx) => {
                   const imageUrl = banner.image || banner.src;
                   const isImageBanner = banner.banner_type === 'image' || !!imageUrl;
@@ -646,76 +636,78 @@ export default function ShopDetailPage() {
                     return (
                       <motion.div
                         key={banner.id || idx}
-                        className="w-full aspect-video rounded-2xl relative overflow-hidden bg-slate-100 border border-slate-200/60 shadow-md cursor-pointer"
-                        initial={{ opacity: 0, scale: 0.95 }}
+                        className="w-full aspect-[16/6] sm:aspect-[21/9] min-h-[150px] sm:min-h-[180px] relative overflow-hidden bg-slate-150 cursor-pointer"
+                        initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.3 }}
-                        whileHover={{ scale: 1.01 }}
                       >
                         <img 
                           src={normalizeImageUrl(imageUrl)} 
-                          className="w-full h-full object-cover" 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-101" 
                           alt="Special Campaign Banner" 
                           onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = PLACEHOLDER_IMAGE;
                           }}
                         />
+                        {/* Premium Glass border overlay */}
+                        <div className="absolute inset-0 border-2 border-white/10 pointer-events-none rounded-3xl" />
                       </motion.div>
                     );
                   }
 
-                  let bgGradient = 'from-[#0E5C42] via-[#146e4f] to-[#1B7A58]'; // green/emerald
+                  // Upgraded stunning high-fidelity gradients
+                  let bgGradient = 'from-[#0A4B35] via-[#0E5C42] to-[#1F8A64]'; // Rich Emerald
                   if (banner.template === 'red') {
-                    bgGradient = 'from-[#9B1C1C] via-[#ae2b25] to-[#C0392B]';
+                    bgGradient = 'from-[#7F1D1D] via-[#9B1C1C] to-[#C0392B]'; // Fire Red
                   } else if (banner.template === 'dark') {
-                    bgGradient = 'from-[#181825] via-[#222232] to-[#2C2C3E]';
+                    bgGradient = 'from-[#0B0F19] via-[#1E293B] to-[#334155]'; // Slate Midnight
                   }
 
                   return (
                     <motion.div
                       key={banner.id || idx}
-                      className={`w-full min-h-[160px] rounded-2xl relative overflow-hidden bg-linear-to-br ${bgGradient} p-5 sm:p-6 shadow-md flex flex-col justify-between cursor-pointer border border-transparent`}
-                      initial={{ opacity: 0, scale: 0.95 }}
+                      className={`w-full min-h-[150px] sm:min-h-[180px] relative overflow-hidden bg-linear-to-tr ${bgGradient} p-5 sm:p-8 flex flex-row items-center justify-between gap-4 cursor-pointer border border-white/10`}
+                      initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.3 }}
-                      whileHover={{ scale: 1.01 }}
                     >
-                      {/* Animated Background */}
-                      <div className="absolute inset-0 opacity-10 transition-opacity">
-                        <ShoppingBag className="absolute -right-16 -top-16 w-40 h-40 text-white" />
-                      </div>
+                      {/* Animated circular vector overlay */}
+                      <div className="absolute inset-0 opacity-15 bg-[radial-gradient(circle_at_70%_120%,rgba(255,255,255,0.25),transparent_50%)] pointer-events-none" />
+                      <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-white/5 blur-2xl pointer-events-none" />
 
-                      {/* Content */}
-                      <div className="relative z-10 text-left">
+                      {/* Content (Left) */}
+                      <div className="relative z-10 text-left max-w-[60%] sm:max-w-2xl">
                         <div className="flex items-center gap-2 mb-2">
-                          <Zap className="w-4 h-4 text-yellow-300" />
-                          <span className="text-[10px] uppercase tracking-widest font-black text-white/90">
-                            {banner.discount ? 'Hot Deal' : 'Limited'}
+                          <span className="inline-flex items-center gap-1 bg-white/10 backdrop-blur-md border border-white/20 text-yellow-300 text-[8px] sm:text-[10px] font-black uppercase tracking-widest px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
+                            <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-yellow-300" />
+                            {banner.discount ? 'Hot Deal' : 'Exclusive'}
                           </span>
                         </div>
 
-                        <h3 className="font-black text-white text-sm sm:text-base mb-1.5 line-clamp-2">
+                        <h3 className="font-black text-white text-sm sm:text-2xl mb-1 sm:mb-2 tracking-tight leading-tight bg-clip-text text-transparent bg-linear-to-b from-white to-white/90 truncate sm:line-clamp-2">
                           {banner.text || banner.title || banner.name || 'Exclusive Offer'}
                         </h3>
 
                         {(banner.subtext || banner.subtitle) && (
-                          <p className="text-[10.5px] text-white/85 font-medium line-clamp-2">
+                          <p className="text-[10px] sm:text-sm text-white/80 font-medium truncate sm:line-clamp-2">
                             {banner.subtext || banner.subtitle}
                           </p>
                         )}
                       </div>
 
-                      {/* Footer */}
-                      <div className="mt-3 pt-2.5 border-t border-white/20 flex items-center justify-between relative z-10 text-left">
+                      {/* Promotion Tag & Shop CTA (Right) */}
+                      <div className="relative z-10 flex flex-col items-end justify-center self-stretch shrink-0 gap-2 sm:gap-4">
                         {banner.discount && (
-                          <span className="text-xs sm:text-sm font-black text-yellow-300">
-                            {banner.discount}
-                          </span>
+                          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl sm:rounded-2xl p-2 px-3 sm:p-4 sm:px-6 text-center select-none rotate-2 shadow-lg transition-transform group-hover:scale-105 duration-300">
+                            <span className="text-xs sm:text-2xl font-black text-yellow-300 tracking-tight drop-shadow-xs">
+                              {banner.discount}
+                            </span>
+                          </div>
                         )}
-                        <span className="text-[10px] font-bold text-white/80 ml-auto flex items-center gap-1 group-hover:text-white transition-colors">
+                        <span className="text-[9px] sm:text-xs font-black text-white bg-white/10 hover:bg-white/20 border border-white/20 px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-full flex items-center gap-1 transition-colors font-bold">
                           Shop Now
-                          <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-0.5 transition-transform" />
                         </span>
                       </div>
                     </motion.div>
@@ -723,29 +715,11 @@ export default function ShopDetailPage() {
                 })}
               </div>
 
-              {/* Left Arrow */}
-              {banners.length > 1 && (
-                <button
-                  onClick={() => setOfferIdx((prev) => (prev - 1 + banners.length) % banners.length)}
-                  className="absolute left-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-md select-none"
-                >
-                  &#10094;
-                </button>
-              )}
 
-              {/* Right Arrow */}
-              {banners.length > 1 && (
-                <button
-                  onClick={() => setOfferIdx((prev) => (prev + 1) % banners.length)}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-md select-none"
-                >
-                  &#10095;
-                </button>
-              )}
 
               {/* Dots / Badges */}
               {banners.length > 1 && (
-                <div className="flex justify-center gap-2 mt-3.5 z-20">
+                <div className="flex justify-center gap-2 mt-4 z-20">
                   {banners.map((_, i) => (
                     <button
                       key={i}
@@ -753,7 +727,7 @@ export default function ShopDetailPage() {
                       className={`w-2 h-2 rounded-full border transition-all cursor-pointer ${
                         offerIdx === i
                           ? 'bg-[#0E5C42] border-[#0E5C42] scale-110'
-                          : 'bg-slate-200 dark:bg-slate-800 border-transparent hover:bg-slate-350'
+                          : 'bg-slate-200 dark:bg-slate-800 border-transparent hover:bg-slate-300'
                       }`}
                     />
                   ))}

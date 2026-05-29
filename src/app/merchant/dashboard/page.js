@@ -27,22 +27,69 @@ import {
   Lock,
   RefreshCw,
   Minus,
-  CheckCircle2
+  CheckCircle2,
+  Compass,
+  MapPin,
+  Clock,
+  Navigation,
+  Award,
+  Loader2,
+  Heart,
+  Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Category mapping metadata matching root page.js
+const CATEGORY_MAPPING = {
+  All:         { emoji: '🏪', color: '#1a5c3a', bg: '#e8f5ee' },
+  Grocery:     { emoji: '🛒', color: '#166534', bg: '#dcfce7' },
+  Footwear:    { emoji: '👟', color: '#92400e', bg: '#fef3c7' },
+  Fashion:     { emoji: '👗', color: '#9d174d', bg: '#fce7f3' },
+  Medicine:    { emoji: '💊', color: '#991b1b', bg: '#fee2e2' },
+  Electronics: { emoji: '📱', color: '#1e3a8a', bg: '#eff6ff' },
+  Bakeries:    { emoji: '🥖', color: '#78350f', bg: '#fef3c7' },
+  Rentals:     { emoji: '🔑', color: '#4c1d95', bg: '#ede9fe' },
+  Stationery:  { emoji: '📝', color: '#0c4a6e', bg: '#e0f2fe' },
+  Furniture:   { emoji: '🛋️', color: '#4a1d96', bg: '#ede9fe' },
+  Books:       { emoji: '📚', color: '#7c2d12', bg: '#fff7ed' },
+  Others:      { emoji: '📦', color: '#374151', bg: '#f3f4f6' },
+};
+const GLOBAL_CATEGORIES = Object.keys(CATEGORY_MAPPING);
+const PREMIUM_PLANS = ['Pro', 'Business', 'Premium', 'pro', 'business', 'premium'];
+const toKm = (d) => (d == null || d === '' || d === 'undefined') ? 999 : Number(d);
+const byDistance = (a, b) => {
+  const da = toKm(a.distance), db = toKm(b.distance);
+  if (da !== db) return da - db;
+  const ap = PREMIUM_PLANS.includes(a.plan), bp = PREMIUM_PLANS.includes(b.plan);
+  return ap === bp ? 0 : ap ? -1 : 1;
+};
 
 export default function MerchantDashboard() {
   const { user, logout } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState('overview'); // overview | profile | products | banners | gallery | referrals
+  const [activeTab, setActiveTab] = useState('overview'); // overview | discover | profile | products | banners | gallery | referrals
   const [dashboardData, setDashboardData] = useState(null);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Search logic from items.js layout mapping
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Discover Local state variables
+  const [discoverCoords, setDiscoverCoords] = useState({ lat: null, lon: null });
+  const [discoverLocStatus, setDiscoverLocStatus] = useState('idle');
+  const [discoverLocLabel, setDiscoverLocLabel] = useState('Set location');
+  const [discoverShops, setDiscoverShops] = useState([]);
+  const [loadingDiscover, setLoadingDiscover] = useState(false);
+  const [discoverSearch, setDiscoverSearch] = useState('');
+  const [discoverCategory, setDiscoverCategory] = useState('All');
+  const [discoverRange, setDiscoverRange] = useState(5);
+  const [discoverFeaturedBanners, setDiscoverFeaturedBanners] = useState([]);
+  const [discoverActiveBanner, setDiscoverActiveBanner] = useState(0);
+  const [discoverShopPage, setDiscoverShopPage] = useState(1);
+  const [discoverProductPage, setDiscoverProductPage] = useState(1);
 
   // Shop update fields
   const [shopForm, setShopForm] = useState({
@@ -93,12 +140,109 @@ export default function MerchantDashboard() {
     }
   }, [user, router]);
 
+  // Reset page sizes when filters alter
+  useEffect(() => {
+    setDiscoverShopPage(1);
+    setDiscoverProductPage(1);
+  }, [discoverSearch, discoverCategory, discoverRange]);
+
+  // ─── GEOLOCATION AND DATA FETCH FOR DISCOVER ───
+  const fetchDiscoverShops = useCallback(async (lat, lon) => {
+    if (!lat || !lon) return;
+    setLoadingDiscover(true);
+    try {
+      const rangeParam = discoverRange === 'All' ? '' : `&range=${discoverRange}`;
+      const res = await api.get(`shops/?lat=${lat}&lon=${lon}${rangeParam}`);
+      if (Array.isArray(res.data)) {
+        setDiscoverShops(res.data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingDiscover(false);
+    }
+  }, [discoverRange]);
+
+  const fetchDiscoverFeaturedBanners = useCallback(async (lat, lon) => {
+    try {
+      let url = 'banners/featured/';
+      if (lat && lon) {
+        url += `?lat=${lat}&lon=${lon}`;
+      }
+      const res = await api.get(url);
+      if (Array.isArray(res.data)) {
+        setDiscoverFeaturedBanners(res.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  const requestDiscoverLocation = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setDiscoverLocStatus('unavailable');
+      return;
+    }
+    setDiscoverLocStatus('requesting');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = String(pos.coords.latitude);
+        const lon = String(pos.coords.longitude);
+        const label = `${Number(lat).toFixed(2)}, ${Number(lon).toFixed(2)}`;
+        setDiscoverCoords({ lat, lon });
+        setDiscoverLocLabel(label);
+        setDiscoverLocStatus('granted');
+        
+        // Cache location locally
+        try {
+          localStorage.setItem('dukand_coords', JSON.stringify({ lat, lon, label }));
+        } catch (_) {}
+
+        fetchDiscoverShops(lat, lon);
+        fetchDiscoverFeaturedBanners(lat, lon);
+      },
+      (err) => {
+        console.warn('Geolocation error:', err.message);
+        setDiscoverLocStatus('denied');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5 * 60 * 1000 }
+    );
+  }, [fetchDiscoverShops, fetchDiscoverFeaturedBanners]);
+
+  // Load cached location on mount if exists
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('dukand_coords');
+        if (saved) {
+          const { lat, lon, label } = JSON.parse(saved);
+          if (lat && lon) {
+            setDiscoverCoords({ lat, lon });
+            setDiscoverLocLabel(label || `${Number(lat).toFixed(2)}, ${Number(lon).toFixed(2)}`);
+            setDiscoverLocStatus('granted');
+            fetchDiscoverShops(lat, lon);
+            fetchDiscoverFeaturedBanners(lat, lon);
+          }
+        }
+      } catch (_) {}
+    }
+  }, [fetchDiscoverShops, fetchDiscoverFeaturedBanners]);
+
+  // Autoplay carousel banner loop for featured campaigns matching app 6s interval
+  useEffect(() => {
+    if (discoverFeaturedBanners.length < 2) return;
+    const interval = setInterval(() => {
+      setDiscoverActiveBanner((prev) => (prev + 1) % discoverFeaturedBanners.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [discoverFeaturedBanners]);
+
   // Fetch all dashboard stats and content from backend API
   const fetchDashboardData = useCallback(async (silent = false) => {
     if (!user?.user_id) return;
     if (!silent) setLoadingProducts(true);
     try {
-      const res = await api.get(`/merchant/dashboard/${user.user_id}/`);
+      const res = await api.get(`merchant/dashboard/${user.user_id}/`);
       setDashboardData(res.data);
       
       // Initialize Shop form details
@@ -115,7 +259,7 @@ export default function MerchantDashboard() {
         
         // Load products for the shop
         try {
-          const itemsRes = await api.get(`/items/${s.id}/`);
+          const itemsRes = await api.get(`items/${s.id}/`);
           setProducts(Array.isArray(itemsRes.data) ? itemsRes.data : []);
         } catch (err) {
           console.error(err);
@@ -557,6 +701,7 @@ export default function MerchantDashboard() {
           <nav className="flex flex-col gap-1 text-left">
             {[
               { id: 'overview', label: 'Home Dashboard', icon: TrendingUp },
+              { id: 'discover', label: 'Discover Local', icon: Compass },
               { id: 'products', label: 'Inventory Catalog', icon: ShoppingBag },
               { id: 'profile', label: 'Store Profile', icon: Store },
               { id: 'referrals', label: 'Invite & Upgrades', icon: Zap },
@@ -930,6 +1075,487 @@ export default function MerchantDashboard() {
                   </div>
                 )}
               </div>
+            </motion.div>
+          )}
+
+          {/* TAB SHELF 1.5: DISCOVER LOCAL Tab implementation */}
+          {activeTab === 'discover' && (
+            <motion.div
+              key="discover-tab"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              className="space-y-6"
+            >
+              {/* Toolbar Section */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block">Explore Stores & Products</span>
+                    <span className="bg-brand-green-600/10 text-brand-green-600 font-extrabold text-[8px] uppercase px-2 py-0.5 rounded tracking-wide font-outfit">Local Search</span>
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white font-outfit mt-0.5">Discover Local Nearby</h2>
+                </div>
+                
+                {/* Location indicator pill */}
+                <button
+                  onClick={requestDiscoverLocation}
+                  className={`px-4 py-2 rounded-xl border flex items-center gap-2 transition-all shadow-sm ${
+                    discoverLocStatus === 'granted'
+                      ? 'bg-brand-green-50 dark:bg-brand-green-950/40 border-brand-green-100 dark:border-brand-green-900/60 text-brand-green-700 dark:text-brand-green-400'
+                      : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'
+                  }`}
+                >
+                  <MapPin className="w-3.5 h-3.5 text-brand-green-600 dark:text-brand-green-400" />
+                  <span className="text-[11px] font-bold font-outfit truncate max-w-[150px]">
+                    {discoverLocStatus === 'requesting' ? 'Requesting Location...' : discoverLocLabel}
+                  </span>
+                </button>
+              </div>
+
+              {/* Location permission fallback CTA when location not shared */}
+              {discoverLocStatus !== 'granted' && (
+                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center max-w-md mx-auto space-y-4 shadow-sm">
+                  <div className="w-14 h-14 rounded-2xl bg-brand-green-50 dark:bg-brand-green-950 flex items-center justify-center text-brand-green-600 dark:text-brand-green-400 mx-auto">
+                    <Navigation className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white font-outfit">Enable Location Services</h3>
+                  <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                    To discover stores, matching products, and real-time inventory in your vicinity, please allow access to your device location.
+                  </p>
+                  <button
+                    onClick={requestDiscoverLocation}
+                    disabled={discoverLocStatus === 'requesting'}
+                    className="w-full bg-brand-green-600 hover:bg-brand-green-700 text-white font-bold text-xs py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {discoverLocStatus === 'requesting' ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Detecting Location...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Navigation className="w-4 h-4" />
+                        <span>Share Location</span>
+                      </>
+                    )}
+                  </button>
+                  {discoverLocStatus === 'denied' && (
+                    <p className="text-[9px] text-red-500 font-bold uppercase tracking-wider mt-2.5">
+                      Permission Denied. Please enable location permissions in browser settings.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Primary discover views when location coordinates unlocked */}
+              {discoverLocStatus === 'granted' && (
+                <div className="space-y-6">
+                  
+                  {/* Search input field and distance slider row */}
+                  <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm space-y-4">
+                    <div className="relative">
+                      <Search className="absolute left-3.5 top-3.5 text-slate-400 w-4 h-4" />
+                      <input 
+                        type="text"
+                        placeholder="Search nearby stores or product items..."
+                        value={discoverSearch}
+                        onChange={(e) => setDiscoverSearch(e.target.value)}
+                        className="w-full text-xs pl-10 pr-10 py-3 rounded-xl bg-slate-50 dark:bg-slate-955 border border-slate-200/80 dark:border-slate-800 text-slate-950 dark:text-white outline-none focus:ring-2 focus:ring-brand-green-600/50"
+                      />
+                      {discoverSearch && (
+                        <button 
+                          onClick={() => setDiscoverSearch('')}
+                          className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-650"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Radius Slider selection mapping from app RANGES */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                      <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Search Range Horizon</span>
+                      <div className="flex items-center gap-1.5">
+                        {[1, 5, 10, 25, 'All'].map((r) => (
+                          <button
+                            key={r}
+                            onClick={() => {
+                              setDiscoverRange(r);
+                              // Trigger reload on next cycle
+                              setTimeout(() => fetchDiscoverShops(discoverCoords.lat, discoverCoords.lon), 50);
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border ${
+                              discoverRange === r
+                                ? 'bg-brand-green-600 border-transparent text-white shadow-xs'
+                                : 'bg-slate-50 dark:bg-slate-955 border-slate-100 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            {r === 'All' ? 'Infinite' : `${r} km`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Horizontal Scrollable Category Selector Pills */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                    {GLOBAL_CATEGORIES.map((catName) => {
+                      const mapping = CATEGORY_MAPPING[catName] || CATEGORY_MAPPING.Others;
+                      const active = discoverCategory === catName;
+                      return (
+                        <button
+                          key={catName}
+                          onClick={() => setDiscoverCategory(catName)}
+                          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full border text-xs font-bold transition-all shrink-0 ${
+                            active
+                              ? 'bg-brand-green-600 border-transparent text-white shadow-sm font-extrabold'
+                              : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                          }`}
+                        >
+                          <span className="text-sm shrink-0">{mapping.emoji}</span>
+                          <span>{catName}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* ── AUTOPLAY FEATURED CAMPAIGNS CAROUSEL ── */}
+                  {discoverFeaturedBanners.length > 0 && (
+                    <div className="relative overflow-hidden aspect-video sm:aspect-[21/9] rounded-2xl border border-brand-green-900/10 shadow-sm bg-brand-green-950 text-white">
+                      {/* Active Slide Renderer */}
+                      {(() => {
+                        const b = discoverFeaturedBanners[discoverActiveBanner];
+                        if (!b) return null;
+                        return (
+                          <motion.div 
+                            key={`banner-slide-${b.id}`}
+                            initial={{ opacity: 0.6 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.4 }}
+                            className="absolute inset-0 w-full h-full p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden"
+                            style={b.background_color ? { backgroundColor: b.background_color } : {}}
+                          >
+                            {b.image && (
+                              <>
+                                <img src={b.image} alt={b.title} className="absolute inset-0 w-full h-full object-cover z-0" />
+                                <div className="absolute inset-0 bg-black/55 z-10" />
+                              </>
+                            )}
+                            
+                            <div className="z-20 relative text-left">
+                              <span className="text-[9px] uppercase font-black text-brand-green-400 block tracking-widest">
+                                {b.small_text || 'Featured Partner Campaign'}
+                              </span>
+                              <h3 className="font-black text-base sm:text-xl mt-1.5 leading-tight font-outfit max-w-lg">
+                                {b.title || 'Local Store Special Offer'}
+                              </h3>
+                              {b.discount && (
+                                <span className="inline-block mt-2 bg-brand-green-600/90 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded">
+                                  {b.discount}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="z-20 relative text-left flex justify-between items-end">
+                              <p className="text-[10px] sm:text-xs text-white/80 line-clamp-1 max-w-md font-medium">
+                                {b.subtitle || 'Connect and save at nearby storefronts.'}
+                              </p>
+                              {b.link && (
+                                <Link 
+                                  href={b.link} 
+                                  target="_blank"
+                                  className="text-[10px] font-black uppercase tracking-wider bg-white text-brand-green-950 px-3 py-1.5 rounded-lg shadow-sm shrink-0 transition-transform hover:scale-105"
+                                >
+                                  Claim Offer ↗
+                                </Link>
+                              )}
+                            </div>
+                          </motion.div>
+                        );
+                      })()}
+
+                      {/* Dots Navigation indicator row */}
+                      {discoverFeaturedBanners.length > 1 && (
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                          {discoverFeaturedBanners.map((_, i) => (
+                            <button
+                              key={`dot-${i}`}
+                              onClick={() => setDiscoverActiveBanner(i)}
+                              className={`w-1.5 h-1.5 rounded-full transition-all ${
+                                i === discoverActiveBanner ? 'bg-white w-4' : 'bg-white/40'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* COMPUTED COMBINED FILTERS LOGIC */}
+                  {(() => {
+                    const q = discoverSearch.toLowerCase().trim();
+                    const cutoff = discoverRange !== 'All' ? Number(discoverRange) : null;
+                    
+                    // Filter Shops
+                    const openNowFiltered = discoverShops.filter((shop) => {
+                      if (!shop.is_open) return false;
+                      if (discoverCategory !== 'All' && shop.category !== discoverCategory) return false;
+                      if (cutoff != null && toKm(shop.distance) > cutoff) return false;
+                      if (q) {
+                        return shop.name?.toLowerCase().includes(q) || shop.category?.toLowerCase().includes(q);
+                      }
+                      return true;
+                    }).sort(byDistance);
+
+                    const allNearbyFiltered = discoverShops.filter((shop) => {
+                      if (discoverCategory !== 'All' && shop.category !== discoverCategory) return false;
+                      if (cutoff != null && toKm(shop.distance) > cutoff) return false;
+                      if (q) {
+                        return shop.name?.toLowerCase().includes(q) || shop.category?.toLowerCase().includes(q);
+                      }
+                      return true;
+                    }).sort(byDistance);
+
+                    // Extract products matching search filters
+                    const productFiltered = [];
+                    discoverShops.forEach((shop) => {
+                      if (cutoff != null && toKm(shop.distance) > cutoff) return;
+                      if (discoverCategory !== 'All' && shop.category !== discoverCategory) return;
+                      
+                      (shop.items || []).forEach((item) => {
+                        if (q && !item.name?.toLowerCase().includes(q)) return;
+                        productFiltered.push({
+                          ...item,
+                          shopId: shop.id,
+                          shopName: shop.name,
+                          distance: shop.distance,
+                          shop_is_open: shop.is_open
+                        });
+                      });
+                    });
+                    productFiltered.sort(byDistance);
+
+                    return (
+                      <div className="space-y-6">
+                        
+                        {/* ── OPEN NOW SECTION ── */}
+                        <div>
+                          <div className="flex items-center gap-2 mb-3.5">
+                            <Clock className="w-4 h-4 text-brand-green-600" />
+                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white font-outfit">Open Now Nearby</h3>
+                            <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-extrabold text-[9px] px-2 py-0.5 rounded-full">
+                              {openNowFiltered.length} Open
+                            </span>
+                          </div>
+
+                          {loadingDiscover ? (
+                            <div className="text-xs text-slate-400 font-bold uppercase tracking-wider py-8 text-center animate-pulse">Syncing nearby maps...</div>
+                          ) : openNowFiltered.length === 0 ? (
+                            <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl text-center text-slate-400 text-[11px] font-medium border dark:border-slate-800">
+                              No stores currently operating open in this horizon range.
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                              {openNowFiltered.map((shop) => {
+                                const isPremium = PREMIUM_PLANS.includes(shop.plan);
+                                const meta = CATEGORY_MAPPING[shop.category] || CATEGORY_MAPPING.Others;
+                                return (
+                                  <Link 
+                                    key={`open-${shop.id}`} 
+                                    href={`/shop/${shop.id}`}
+                                    className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-3 rounded-xl shadow-xs w-48 shrink-0 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors block text-left font-sans"
+                                  >
+                                    <div className="aspect-video w-full rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-950 relative border dark:border-slate-850">
+                                      {shop.cover_image || shop.image ? (
+                                        <img src={shop.cover_image || shop.image} alt={shop.name} className="w-full h-full object-cover" />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-2xl bg-brand-green-50 dark:bg-brand-green-950/20">{meta.emoji}</div>
+                                      )}
+                                      <div className="absolute bottom-2 left-2 bg-emerald-500/95 text-white font-black text-[9px] px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                        <span>Open</span>
+                                      </div>
+                                      {isPremium && (
+                                        <span className="absolute top-2 right-2 bg-brand-green-600 text-white font-black text-[8px] uppercase px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                          <Award className="w-2 h-2 text-white" /> PRO
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="mt-2.5">
+                                      <h4 className="font-extrabold text-xs text-slate-900 dark:text-white truncate font-outfit leading-tight">{shop.name}</h4>
+                                      <span className="text-[10px] text-slate-400 block mt-0.5 font-medium">{shop.category}</span>
+                                      {shop.distance && (
+                                        <span className="inline-block mt-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-355 text-[9px] font-black px-2 py-0.5 rounded">
+                                          {Number(shop.distance).toFixed(1)} km
+                                        </span>
+                                      )}
+                                    </div>
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── STORES AND PRODUCTS GRID MAPPING ── */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                          
+                          {/* Store Grid Panel */}
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Store className="w-4 h-4 text-brand-green-600" />
+                                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white font-outfit">Stores Directory</h3>
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{allNearbyFiltered.length} Found</span>
+                            </div>
+
+                            {loadingDiscover ? (
+                              <div className="text-xs text-slate-400 font-bold uppercase tracking-wider py-8 text-center animate-pulse">Scanning nearby stores...</div>
+                            ) : allNearbyFiltered.length === 0 ? (
+                              <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl text-center text-slate-400 text-[11px] font-medium border dark:border-slate-800">
+                                No stores found matching these categories.
+                              </div>
+                            ) : (
+                              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                                {allNearbyFiltered.slice(0, discoverShopPage * 10).map((shop) => {
+                                  const isPremium = PREMIUM_PLANS.includes(shop.plan);
+                                  const meta = CATEGORY_MAPPING[shop.category] || CATEGORY_MAPPING.Others;
+                                  return (
+                                    <Link
+                                      key={shop.id}
+                                      href={`/shop/${shop.id}`}
+                                      className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-3 rounded-xl flex gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all text-left block"
+                                    >
+                                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-950 shrink-0 relative border dark:border-slate-850 flex items-center justify-center">
+                                        {shop.cover_image || shop.image ? (
+                                          <img src={shop.cover_image || shop.image} alt={shop.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                          <span className="text-xl">{meta.emoji}</span>
+                                        )}
+                                      </div>
+                                      <div className="flex-grow min-w-0 flex flex-col justify-between">
+                                        <div>
+                                          <div className="flex items-center gap-1.5">
+                                            <h4 className="font-extrabold text-xs text-slate-900 dark:text-white truncate font-outfit leading-tight">{shop.name}</h4>
+                                            {isPremium && (
+                                              <span className="bg-brand-green-600/10 text-brand-green-600 text-[7px] font-black uppercase px-1 rounded flex items-center gap-0.5 shrink-0">
+                                                PRO
+                                              </span>
+                                            )}
+                                          </div>
+                                          <span className="text-[10px] text-slate-400 block mt-0.5 font-medium">{shop.category}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          {shop.distance && (
+                                            <span className="text-[9px] font-black text-slate-500 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                                              {Number(shop.distance).toFixed(1)} km
+                                            </span>
+                                          )}
+                                          <span className={`text-[9px] font-bold ${shop.is_open ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                            {shop.is_open ? '● Open' : 'Closed'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </Link>
+                                  );
+                                })}
+
+                                {allNearbyFiltered.length > discoverShopPage * 10 && (
+                                  <button
+                                    onClick={() => setDiscoverShopPage((p) => p + 1)}
+                                    className="w-full text-center py-2.5 rounded-xl border border-slate-150 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 transition-colors"
+                                  >
+                                    Load More Stores
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Product Grid Panel */}
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <ShoppingBag className="w-4 h-4 text-brand-green-600" />
+                                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white font-outfit">Local Marketplace</h3>
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{productFiltered.length} Goods</span>
+                            </div>
+
+                            {loadingDiscover ? (
+                              <div className="text-xs text-slate-400 font-bold uppercase tracking-wider py-8 text-center animate-pulse">Scouring local catalog...</div>
+                            ) : productFiltered.length === 0 ? (
+                              <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl text-center text-slate-400 text-[11px] font-medium border dark:border-slate-800">
+                                No products catalogued matching filters.
+                              </div>
+                            ) : (
+                              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                                {productFiltered.slice(0, discoverProductPage * 10).map((prod) => (
+                                  <Link
+                                    key={prod.id}
+                                    href={`/shop/${prod.shopId}`}
+                                    className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-3 rounded-xl flex gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all text-left block"
+                                  >
+                                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-950 shrink-0 relative border dark:border-slate-850 flex items-center justify-center">
+                                      {prod.image ? (
+                                        <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
+                                      ) : (
+                                        <ShoppingBag className="w-6 h-6 text-slate-300" />
+                                      )}
+                                      {prod.price && (
+                                        <span className="absolute bottom-1 left-1 bg-slate-955/80 backdrop-blur-sm text-white font-black text-[8px] px-1.5 py-0.5 rounded">
+                                          ₹{Number(prod.price).toFixed(0)}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex-grow min-w-0 flex flex-col justify-between">
+                                      <div>
+                                        <h4 className="font-extrabold text-xs text-slate-900 dark:text-white truncate font-outfit leading-tight">{prod.name}</h4>
+                                        <span className="text-[10px] text-slate-400 block mt-0.5 font-medium truncate">from {prod.shopName}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between">
+                                        {prod.distance && (
+                                          <span className="text-[9px] font-black text-slate-500 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                                            {Number(prod.distance).toFixed(1)} km
+                                          </span>
+                                        )}
+                                        {prod.track_quantity && (
+                                          <span className={`text-[8px] font-black uppercase px-1 rounded ${
+                                            prod.quantity_status === 'out' 
+                                              ? 'bg-red-55 text-red-600 border border-red-100/50' 
+                                              : prod.quantity_status === 'low' 
+                                                ? 'bg-amber-55 text-amber-600 border border-amber-100/50' 
+                                                : 'bg-emerald-55 text-emerald-600 border border-emerald-100/50'
+                                          }`}>
+                                            {prod.quantity_status === 'out' ? 'Out of stock' : prod.quantity_status === 'low' ? 'Low Stock' : 'In stock'}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </Link>
+                                ))}
+
+                                {productFiltered.length > discoverProductPage * 10 && (
+                                  <button
+                                    onClick={() => setDiscoverProductPage((p) => p + 1)}
+                                    className="w-full text-center py-2.5 rounded-xl border border-slate-150 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 transition-colors"
+                                  >
+                                    Load More Goods
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                </div>
+              )}
             </motion.div>
           )}
 
