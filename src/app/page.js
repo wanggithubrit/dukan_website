@@ -51,30 +51,10 @@ const byDistance = (a, b) => {
   return ap === bp ? 0 : ap ? -1 : 1;
 };
 
-/* ─── LOCATION HOOK ───────────────────────────────────────────────────────── */
 function useLocation() {
   const [coords, setCoords] = useState({ lat: null, lon: null });
   const [status, setStatus] = useState('idle');
   const [locLabel, setLocLabel] = useState('Set location');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(LOC_STORAGE_KEY);
-        if (saved) {
-          const { lat, lon, label } = JSON.parse(saved);
-          if (lat && lon && lat !== 'undefined' && lon !== 'undefined') {
-            const finalLabel = label || `${Number(lat).toFixed(2)}, ${Number(lon).toFixed(2)}`;
-            Promise.resolve().then(() => {
-              setCoords({ lat: String(lat), lon: String(lon) });
-              setStatus('granted');
-              setLocLabel(finalLabel);
-            });
-          }
-        }
-      } catch (_) {}
-    }
-  }, []);
 
   const requestLocation = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
@@ -94,6 +74,43 @@ function useLocation() {
       (err) => { console.warn('Geolocation error:', err.message); setStatus('denied'); },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 5 * 60 * 1000 }
     );
+  }, []);
+
+  useEffect(() => {
+    // 1. Read from localStorage on mount (client-only)
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(LOC_STORAGE_KEY);
+        if (saved) {
+          const { lat, lon, label } = JSON.parse(saved);
+          if (lat && lon && lat !== 'undefined' && lon !== 'undefined') {
+            const finalLabel = label || `${Number(lat).toFixed(2)}, ${Number(lon).toFixed(2)}`;
+            setCoords({ lat: String(lat), lon: String(lon) });
+            setStatus('granted');
+            setLocLabel(finalLabel);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 2. Always request fresh location in the background if browser supports it
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = String(pos.coords.latitude);
+          const lon = String(pos.coords.longitude);
+          const label = `${Number(lat).toFixed(2)}, ${Number(lon).toFixed(2)}`;
+          setCoords({ lat, lon });
+          setLocLabel(label);
+          setStatus('granted');
+          try { localStorage.setItem(LOC_STORAGE_KEY, JSON.stringify({ lat, lon, label })); } catch (_) {}
+        },
+        (err) => {
+          console.warn('Geolocation mount error:', err.message);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
   }, []);
 
   const hasCoords = status === 'granted' && !!coords.lat && !!coords.lon;
