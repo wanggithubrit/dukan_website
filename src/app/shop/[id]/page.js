@@ -282,8 +282,9 @@ export default function ShopDetailPage() {
   
   // Format distance
   const formatDistance = (distance) => {
-    if (!distance) return '';
+    if (distance == null || distance === '' || distance === 'undefined') return '';
     const d = Number(distance);
+    if (d <= 0) return '0 km';
     if (d < 1) return `Nearby (${Math.round(d * 1000)}m)`;
     return `Approx. ${d.toFixed(1)} km`;
   };

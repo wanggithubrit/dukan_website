@@ -17,7 +17,7 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "Dukan – Discover Nearby Local Shops",
+  title: "MyDukan – Discover Nearby Local Shops",
 
   description:
     "Discover nearby local shops, products, and offers with Dukan. Explore grocery, fashion, electronics, restaurants, and more near you in Nagaland.",
