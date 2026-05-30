@@ -374,7 +374,7 @@ function SearchContent() {
                         {shop.distance != null && (
                           <div className="absolute bottom-3 right-3 bg-white/80 backdrop-blur-md text-[#092219] text-[9px] font-black px-2.5 py-1 rounded-full flex items-center gap-1">
                             <MapPin className="w-3 h-3 text-[#0A5C43]" />
-                            {Number(shop.distance).toFixed(1)} km
+                            {shop.distance < 1 ? `Nearby (${Math.round(shop.distance * 1000)}m)` : `Approx. ${Number(shop.distance).toFixed(1)} km`}
                           </div>
                         )}
                       </div>

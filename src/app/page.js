@@ -19,6 +19,12 @@ import {
 const PAGE_SIZE = 6;
 const RANGES = ['All', 1, 5, 10, 25];
 const PREMIUM_PLANS = ['Pro', 'Business', 'Premium', 'pro', 'business', 'premium'];
+const formatDistance = (distance) => {
+  if (distance == null || distance === '' || distance === 'undefined') return '';
+  const d = Number(distance);
+  if (d < 1) return `Nearby (${Math.round(d * 1000)}m)`;
+  return `Approx. ${d.toFixed(1)} km`;
+};
 const LOC_STORAGE_KEY = 'dukand_coords';
 
 const CATEGORY_MAPPING = {
@@ -216,7 +222,7 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
                           <p className="dkn-mini-name"><Highlight text={shop.name} query={query} /></p>
                           <p className="dkn-mini-cat">{shop.category}</p>
                           <div className="dkn-mini-foot">
-                            {shop.distance && <span className="dkn-mini-dist">{Number(shop.distance).toFixed(1)} km</span>}
+                            {shop.distance && <span className="dkn-mini-dist">{formatDistance(shop.distance)}</span>}
                             {shop.is_open && <span className="dkn-mini-open">Open</span>}
                           </div>
                         </div>
@@ -239,7 +245,7 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
                           <p className="dkn-mini-cat">{item.shopName}</p>
                           <div className="dkn-mini-foot">
                             {item.price && <span className="dkn-mini-price">₹{item.price}</span>}
-                            {item.distance && <span className="dkn-mini-dist">{Number(item.distance).toFixed(1)} km</span>}
+                            {item.distance && <span className="dkn-mini-dist">{formatDistance(item.distance)}</span>}
                           </div>
                         </div>
                       </Link>
@@ -1305,7 +1311,7 @@ export default function HomeDashboard() {
                           <div className="dkn-card-name">{shop.name}</div>
                           <div className="dkn-card-cat">{shop.category}</div>
                           <div className="dkn-card-foot">
-                            {shop.distance && <span className="dkn-dist-pill">{Number(shop.distance).toFixed(1)} km</span>}
+                            {shop.distance && <span className="dkn-dist-pill">{formatDistance(shop.distance)}</span>}
                           </div>
                         </div>
                       </Link>
@@ -1404,7 +1410,7 @@ export default function HomeDashboard() {
                               <div className="dkn-gc-name">{shop.name}</div>
                               <div className="dkn-gc-cat">{shop.category}</div>
                               <div className="dkn-gc-foot">
-                                {shop.distance && <span className="dkn-gc-dist">{Number(shop.distance).toFixed(1)} km</span>}
+                                {shop.distance && <span className="dkn-gc-dist">{formatDistance(shop.distance)}</span>}
                                 {shop.is_open
                                   ? <span className="dkn-gc-open">Open</span>
                                   : <span className="dkn-gc-closed">Closed</span>}

@@ -1605,7 +1605,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
                                       <span className="text-[10px] text-slate-400 block mt-0.5 font-medium">{shop.category}</span>
                                       {shop.distance && (
                                         <span className="inline-block mt-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-355 text-[9px] font-black px-2 py-0.5 rounded">
-                                          {Number(shop.distance).toFixed(1)} km
+                                          {shop.distance < 1 ? `Nearby (${Math.round(shop.distance * 1000)}m)` : `Approx. ${Number(shop.distance).toFixed(1)} km`}
                                         </span>
                                       )}
                                     </div>
@@ -1668,7 +1668,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
                                         <div className="flex items-center gap-2">
                                           {shop.distance && (
                                             <span className="text-[9px] font-black text-slate-500 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                                              {Number(shop.distance).toFixed(1)} km
+                                              {shop.distance < 1 ? `Nearby (${Math.round(shop.distance * 1000)}m)` : `Approx. ${Number(shop.distance).toFixed(1)} km`}
                                             </span>
                                           )}
                                           <span className={`text-[9px] font-bold ${shop.is_open ? 'text-emerald-600' : 'text-slate-400'}`}>
@@ -1736,7 +1736,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
                                       <div className="flex items-center justify-between">
                                         {prod.distance && (
                                           <span className="text-[9px] font-black text-slate-500 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                                            {Number(prod.distance).toFixed(1)} km
+                                            {prod.distance < 1 ? `Nearby (${Math.round(prod.distance * 1000)}m)` : `Approx. ${Number(prod.distance).toFixed(1)} km`}
                                           </span>
                                         )}
                                         {prod.track_quantity && (

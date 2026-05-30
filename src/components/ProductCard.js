@@ -100,7 +100,7 @@ export default function ProductCard({ item, showShopInfo = true }) {
                 {item.shop_details.distance !== undefined && item.shop_details.distance !== null && (
                   <span className="flex items-center gap-0.5 shrink-0 font-extrabold text-green-600">
                     <Navigation className="w-3 h-3 shrink-0" />
-                    {item.shop_details.distance.toFixed(1)} km
+                    {item.shop_details.distance < 1 ? `Nearby (${Math.round(item.shop_details.distance * 1000)}m)` : `Approx. ${item.shop_details.distance.toFixed(1)} km`}
                   </span>
                 )}
               </div>

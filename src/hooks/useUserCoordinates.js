@@ -27,10 +27,32 @@ export const useUserCoordinates = () => {
       }
     }
     
-    // Defer state update to next microtask to avoid synchronous setState inside useEffect body
-    Promise.resolve().then(() => {
-      setIsLoaded(true);
-    });
+    // Automatically request browser location if not cached in localStorage
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          localStorage.setItem('user_lat', String(latitude));
+          localStorage.setItem('user_lon', String(longitude));
+          Promise.resolve().then(() => {
+            setCoords({ lat: latitude, lon: longitude });
+            setIsLoaded(true);
+            setHasPermission(true);
+          });
+        },
+        (error) => {
+          console.warn('Geolocation prompt error on mount:', error);
+          Promise.resolve().then(() => {
+            setIsLoaded(true);
+            setHasPermission(false);
+          });
+        }
+      );
+    } else {
+      Promise.resolve().then(() => {
+        setIsLoaded(true);
+      });
+    }
   }, []);
 
   const requestBrowserLocation = useCallback(() => {

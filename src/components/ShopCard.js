@@ -171,7 +171,7 @@ export default function ShopCard({ shop }) {
             >
               <Navigation className="w-2 h-2 shrink-0" style={{ color: '#0A5C43' }} />
               <span style={{ fontSize: 9, fontWeight: 700, color: '#0A5C43', letterSpacing: -0.1 }}>
-                {Number(distance).toFixed(1)} km
+                {distance < 1 ? `Nearby (${Math.round(distance * 1000)}m)` : `Approx. ${Number(distance).toFixed(1)} km`}
               </span>
             </div>
           )}

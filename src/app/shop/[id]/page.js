@@ -263,9 +263,8 @@ export default function ShopDetailPage() {
   const formatDistance = (distance) => {
     if (!distance) return '';
     const d = Number(distance);
-    if (d < 1) return `${Math.round(d * 1000)} m`;
-    if (d < 100) return `${d.toFixed(1)} km`;
-    return `${Math.round(d)} km`;
+    if (d < 1) return `Nearby (${Math.round(d * 1000)}m)`;
+    return `Approx. ${d.toFixed(1)} km`;
   };
 
   // Focus search input when showing search

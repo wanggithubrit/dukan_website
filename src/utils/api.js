@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://dukan-backend-0cc9.onrender.com/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dukan-backend-0cc9.onrender.com/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
