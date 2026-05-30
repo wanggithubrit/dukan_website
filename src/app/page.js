@@ -222,7 +222,7 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
                           <p className="dkn-mini-name"><Highlight text={shop.name} query={query} /></p>
                           <p className="dkn-mini-cat">{shop.category}</p>
                           <div className="dkn-mini-foot">
-                            {shop.distance && <span className="dkn-mini-dist">{formatDistance(shop.distance)}</span>}
+                            {shop.distance != null && <span className="dkn-mini-dist">{formatDistance(shop.distance)}</span>}
                             {shop.is_open && <span className="dkn-mini-open">Open</span>}
                           </div>
                         </div>
@@ -245,7 +245,7 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
                           <p className="dkn-mini-cat">{item.shopName}</p>
                           <div className="dkn-mini-foot">
                             {item.price && <span className="dkn-mini-price">₹{item.price}</span>}
-                            {item.distance && <span className="dkn-mini-dist">{formatDistance(item.distance)}</span>}
+                            {item.distance != null && <span className="dkn-mini-dist">{formatDistance(item.distance)}</span>}
                           </div>
                         </div>
                       </Link>
@@ -1311,7 +1311,7 @@ export default function HomeDashboard() {
                           <div className="dkn-card-name">{shop.name}</div>
                           <div className="dkn-card-cat">{shop.category}</div>
                           <div className="dkn-card-foot">
-                            {shop.distance && <span className="dkn-dist-pill">{formatDistance(shop.distance)}</span>}
+                            {shop.distance != null && <span className="dkn-dist-pill">{formatDistance(shop.distance)}</span>}
                           </div>
                         </div>
                       </Link>
@@ -1410,7 +1410,7 @@ export default function HomeDashboard() {
                               <div className="dkn-gc-name">{shop.name}</div>
                               <div className="dkn-gc-cat">{shop.category}</div>
                               <div className="dkn-gc-foot">
-                                {shop.distance && <span className="dkn-gc-dist">{formatDistance(shop.distance)}</span>}
+                                {shop.distance != null && <span className="dkn-gc-dist">{formatDistance(shop.distance)}</span>}
                                 {shop.is_open
                                   ? <span className="dkn-gc-open">Open</span>
                                   : <span className="dkn-gc-closed">Closed</span>}
