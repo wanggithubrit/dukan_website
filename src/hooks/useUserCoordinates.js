@@ -12,46 +12,38 @@ export const useUserCoordinates = () => {
   const [hasPermission, setHasPermission] = useState(true);
 
   useEffect(() => {
-    // Read from localStorage on mount (client-only)
+    // 1. Read from localStorage on mount (client-only)
     if (typeof window !== 'undefined') {
       const lat = localStorage.getItem('user_lat');
       const lon = localStorage.getItem('user_lon');
       if (lat && lon && lat !== 'undefined' && lon !== 'undefined') {
         const parsedLat = parseFloat(lat);
         const parsedLon = parseFloat(lon);
-        Promise.resolve().then(() => {
-          setCoords({ lat: parsedLat, lon: parsedLon });
-          setIsLoaded(true);
-        });
-        return;
+        setCoords({ lat: parsedLat, lon: parsedLon });
+        setIsLoaded(true);
       }
     }
     
-    // Automatically request browser location if not cached in localStorage
+    // 2. Always fetch fresh location in background to update stale cached values
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           localStorage.setItem('user_lat', String(latitude));
           localStorage.setItem('user_lon', String(longitude));
-          Promise.resolve().then(() => {
-            setCoords({ lat: latitude, lon: longitude });
-            setIsLoaded(true);
-            setHasPermission(true);
-          });
+          setCoords({ lat: latitude, lon: longitude });
+          setIsLoaded(true);
+          setHasPermission(true);
         },
         (error) => {
           console.warn('Geolocation prompt error on mount:', error);
-          Promise.resolve().then(() => {
-            setIsLoaded(true);
-            setHasPermission(false);
-          });
-        }
+          setIsLoaded(true);
+          setHasPermission(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
       );
     } else {
-      Promise.resolve().then(() => {
-        setIsLoaded(true);
-      });
+      setIsLoaded(true);
     }
   }, []);
 
