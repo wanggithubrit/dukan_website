@@ -26,6 +26,27 @@ const normalizeImageUrl = (img) => {
   return `${API_BASE_URL}/${value.replace(/^\/+/, '')}`;
 };
 
+const CATEGORY_STYLES = {
+  Grocery:     { emoji: '🛒', gradient: 'from-emerald-600 to-teal-800', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  Footwear:    { emoji: '👟', gradient: 'from-amber-500 to-orange-700', bg: 'bg-amber-50', text: 'text-amber-700' },
+  Fashion:     { emoji: '👗', gradient: 'from-pink-500 to-rose-700', bg: 'bg-pink-50', text: 'text-pink-700' },
+  Medicine:    { emoji: '💊', gradient: 'from-red-500 to-rose-800', bg: 'bg-red-50', text: 'text-red-700' },
+  Electronics: { emoji: '📱', gradient: 'from-blue-600 to-indigo-800', bg: 'bg-blue-50', text: 'text-blue-700' },
+  Bakeries:    { emoji: '🥖', gradient: 'from-amber-600 to-amber-800', bg: 'bg-amber-50', text: 'text-amber-700' },
+  Rentals:     { emoji: '🔑', gradient: 'from-purple-600 to-violet-800', bg: 'bg-purple-50', text: 'text-purple-700' },
+  Stationery:  { emoji: '📝', gradient: 'from-sky-500 to-sky-700', bg: 'bg-sky-50', text: 'text-sky-700' },
+  Furniture:   { emoji: '🛋️', gradient: 'from-violet-500 to-fuchsia-800', bg: 'bg-violet-50', text: 'text-violet-700' },
+  Books:       { emoji: '📚', gradient: 'from-orange-600 to-red-800', bg: 'bg-orange-50', text: 'text-orange-700' },
+  Others:      { emoji: '📦', gradient: 'from-slate-600 to-slate-800', bg: 'bg-slate-50', text: 'text-slate-700' },
+};
+
+const getInitials = (name) => {
+  if (!name) return '🏪';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 // Color Palette - Premium Green Theme
 const colors = {
   primary: '#0E5C42',
@@ -386,11 +407,17 @@ export default function ShopDetailPage() {
     );
   }
 
+  const hasCoverImage = galleryImages.length > 0 || (shop.cover_image && shop.cover_image !== '' && shop.cover_image !== 'null');
+  const hasAvatarImage = shop.image && shop.image !== '' && shop.image !== 'null';
+
   const coverImage = galleryImages[galleryIndex] || normalizeImageUrl(shop.cover_image) || normalizeImageUrl(shop.image) || PLACEHOLDER_IMAGE;
   const avatarUrl = normalizeImageUrl(shop.image) || normalizeImageUrl(shop.cover_image) || galleryImages[0] || PLACEHOLDER_IMAGE;
   const heroImageKey = `${shop.id || 'shop'}-${coverImage}`;
   const avatarImageKey = `${shop.id || 'shop'}-${avatarUrl}`;
-  
+
+  const catKey = shop.category ? (shop.category.charAt(0).toUpperCase() + shop.category.slice(1).toLowerCase()) : 'Others';
+  const catStyle = CATEGORY_STYLES[catKey] || CATEGORY_STYLES.Others;
+
   const googleMapsUrl = shop.latitude && shop.longitude 
     ? `https://maps.google.com/?q=${shop.latitude},${shop.longitude}`
     : '#';
@@ -404,21 +431,35 @@ export default function ShopDetailPage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
-        <motion.img
-          key={heroImageKey}
-          src={coverImage}
-          alt={shop.name}
-          className="w-full h-full object-cover"
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.8 }}
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = PLACEHOLDER_IMAGE;
-          }}
-        />
+        {hasCoverImage ? (
+          <motion.img
+            key={heroImageKey}
+            src={coverImage}
+            alt={shop.name}
+            className="w-full h-full object-cover"
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.8 }}
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = PLACEHOLDER_IMAGE;
+            }}
+          />
+        ) : (
+          <div className={`w-full h-full bg-gradient-to-br ${catStyle.gradient} flex flex-col items-center justify-center relative`}>
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:28px_28px] opacity-25" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 0.22 }}
+              transition={{ duration: 0.8 }}
+              className="text-8xl sm:text-[12rem] font-bold select-none pointer-events-none"
+            >
+              {catStyle.emoji}
+            </motion.div>
+          </div>
+        )}
 
-        
         {/* Back Button */}
         <motion.button 
           onClick={() => router.push('/')}
@@ -459,19 +500,30 @@ export default function ShopDetailPage() {
             {/* Shop Info */}
             <div className="flex items-start sm:items-center gap-5 flex-1">
               <motion.div 
-                className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-md shrink-0 border-2 border-green-100 bg-slate-100"
+                className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-md shrink-0 border-2 border-green-100 bg-white flex items-center justify-center"
                 whileHover={{ scale: 1.05 }}
               >
-                <img
-                  key={avatarImageKey}
-                  src={avatarUrl}
-                  alt={shop.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = PLACEHOLDER_IMAGE;
-                  }}
-                />
+                {hasAvatarImage ? (
+                  <img
+                    key={avatarImageKey}
+                    src={avatarUrl}
+                    alt={shop.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = PLACEHOLDER_IMAGE;
+                    }}
+                  />
+                ) : (
+                  <div className={`w-full h-full bg-gradient-to-br ${catStyle.gradient} flex flex-col items-center justify-center`}>
+                    <span className="text-white text-lg sm:text-2xl font-black tracking-wider">
+                      {getInitials(shop.name)}
+                    </span>
+                    <span className="text-white/70 text-[9px] sm:text-[11px] font-bold uppercase mt-0.5 sm:mt-1">
+                      {catStyle.emoji}
+                    </span>
+                  </div>
+                )}
               </motion.div>
               
             <div className="grow">
