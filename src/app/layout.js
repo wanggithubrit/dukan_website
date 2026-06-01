@@ -20,14 +20,14 @@ export const metadata = {
   title: "MyDukan – Discover Nearby Local Shops",
 
   description:
-    "Discover nearby local shops, products, and offers with Dukan. Explore grocery, fashion, electronics, restaurants, and more near you in Nagaland.",
+    "Discover nearby local shops, products, and offers with MyDukan. Explore grocery, fashion, electronics, restaurants, and more near you in Nagaland.",
 
   metadataBase: new URL("https://mydukan.online"),
 
   keywords: [
     "mydukan",
     "mydukan",
-    "dukan",
+    "mydukan",
     "local shops",
     "Nagaland marketplace",
     "shops near me",
@@ -38,20 +38,20 @@ export const metadata = {
   ],
 
   openGraph: {
-    title: "Dukan – Discover Nearby Local Shops",
+    title: "MyDukan – Discover Nearby Local Shops",
     description:
-      "Explore nearby shops, products, and local offers with Dukan.",
+      "Explore nearby shops, products, and local offers with MyDukan.",
     url: "https://mydukan.online",
-    siteName: "Dukan",
+    siteName: "MyDukan",
     locale: "en_US",
     type: "website",
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Dukan – Discover Nearby Local Shops",
+    title: "MyDukan – Discover Nearby Local Shops",
     description:
-      "Find nearby local shops, products, and offers with Dukan.",
+      "Find nearby local shops, products, and offers with MyDukan.",
   },
 };
 

@@ -10,11 +10,11 @@ import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { useUserCoordinates } from '@/hooks/useUserCoordinates';
 import {
-  ArrowLeft, Phone, MapPin, Share2, Heart, Smartphone, Zap, Compass, ShoppingBag, ChevronRight, Search, X, Sparkles
+  ArrowLeft, Phone, MapPin, Share2, Heart, Smartphone, Zap, Compass, ShoppingBag, ChevronRight, Search, X, Sparkles, AlertCircle
 } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
 
-const API_BASE_URL = 'https://dukan-backend-0cc9.onrender.com';
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api\/?$/, '');
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80';
 
 const normalizeImageUrl = (img) => {
@@ -89,8 +89,10 @@ const SkeletonLoader = ({ className = '' }) => (
 );
 
 // Item Modal Component
-const ItemModal = ({ item, visible, onClose }) => {
+const ItemModal = ({ item, visible, onClose, shop }) => {
   if (!item) return null;
+
+  const targetPhone = shop?.whatsapp_number || shop?.phone || '';
 
   return (
     <AnimatePresence>
@@ -179,14 +181,26 @@ const ItemModal = ({ item, visible, onClose }) => {
                 )}
 
                 {/* Footer Action Button */}
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-slate-100 flex gap-2">
+                  {targetPhone && (
+                    <motion.a
+                      href={`https://wa.me/${targetPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I am interested in "${item.name}" from your shop. Can you please check the price / provide a quote?`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <span>Check Price / Quote</span>
+                    </motion.a>
+                  )}
                   <motion.button
                     onClick={onClose}
-                    className="w-full py-2.5 rounded-xl bg-[#0A5C43] hover:bg-[#084834] text-white text-[10px] font-black uppercase tracking-wider shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center"
+                    className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    Close Details
+                    Close
                   </motion.button>
                 </div>
               </div>
@@ -327,6 +341,28 @@ export default function ShopDetailPage() {
       showToast('Store link copied!', 'success');
     }
   }, [showToast]);
+
+  const handleReportStatus = async () => {
+    if (!user) {
+      showToast('Please login to report shop status and earn credits!', 'info');
+      return;
+    }
+    const reason = prompt("What is the current status of this shop? (e.g. 'Confirmed Open', 'Temporarily Closed', 'Moved Location')");
+    if (!reason || !reason.trim()) return;
+
+    try {
+      const res = await api.post('/reports/submit/', {
+        shop_id: id,
+        report_type: 'status',
+        details: reason
+      });
+      if (res.data.success) {
+        showToast(res.data.message || 'Report submitted! Thank you.', 'success');
+      }
+    } catch (err) {
+      showToast('Failed to submit report. Please try again.', 'error');
+    }
+  };
 
   // Filter items by search query
   const filteredItems = items.filter(item =>
@@ -643,8 +679,10 @@ export default function ShopDetailPage() {
                 <Share2 className="w-5 h-5" />
               </motion.button>
 
+
+
               <motion.button
-                onClick={() => showToast("Opening Dukand app...", "info")}
+                onClick={() => showToast("Opening MyDukan app...", "info")}
                 className="bg-linear-to-r from-green-600 to-green-700 hover:shadow-lg text-white font-bold text-xs px-4 py-3 rounded-xl flex items-center gap-1.5 transition-shadow"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -901,7 +939,7 @@ export default function ShopDetailPage() {
                 onClick={() => handleItemClick(item)}
                 className="cursor-pointer"
               >
-                <ProductCard key={item.id} item={item} showShopInfo={false} />
+                <ProductCard key={item.id} item={item} showShopInfo={false} shopPhone={shop.phone} shopWhatsApp={shop.whatsapp_number} />
               </motion.div>
             ))}
           </motion.div>
@@ -909,7 +947,7 @@ export default function ShopDetailPage() {
       </motion.section>
 
       {/* Item Modal */}
-      <ItemModal item={selectedItem} visible={showItemModal} onClose={closeModal} />
+      <ItemModal item={selectedItem} visible={showItemModal} onClose={closeModal} shop={shop} />
     </div>
   );
 }

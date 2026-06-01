@@ -1846,6 +1846,24 @@ function DashboardContent({ defaultTab = 'overview' }) {
                   )}
                 </div>
               </div>
+ 
+              {/* ONDC NETWORKING INTEGRATION CARD */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 text-left space-y-3.5 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-black text-[#0F2118] dark:text-white font-outfit">ONDC Network Visibility</h4>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-450 border border-emerald-250/20 text-[9px] font-black uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-450 dark:text-slate-400 font-medium leading-relaxed">
+                  Your store is registered on the ONDC registry protocol. Customers across buyer apps on the ONDC network can discover and view your menu.
+                </p>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80 text-[10px] text-slate-400">
+                  <span>Registry Node:</span>
+                  <span className="font-extrabold text-[#2F5D50] dark:text-emerald-400 font-mono">mydukan.ondc.gateway</span>
+                </div>
+              </div>
 
               {/* REFERRAL CARD */}
               <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 text-left space-y-4 shadow-sm">
@@ -2055,10 +2073,10 @@ function DashboardContent({ defaultTab = 'overview' }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-[#4A6B55] dark:text-slate-400 uppercase tracking-wider block">Address Description</label>
+                        <label className="text-[10px] font-bold text-[#4A6B55] dark:text-slate-400 uppercase tracking-wider block">Shop Description / Colony / Ward Location</label>
                         <textarea
                           rows="3"
-                          placeholder="Nearby landmark, colony name, or full shop address"
+                          placeholder="Colony name, ward number, nearby landmark, or shop description (optional)"
                           value={shopForm.description || ''}
                           onChange={(e) => setShopForm({ ...shopForm, description: e.target.value })}
                           className="w-full text-xs p-3 rounded-xl border-2 border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-[#1A6B3A] transition-colors resize-none"
@@ -2147,9 +2165,9 @@ function DashboardContent({ defaultTab = 'overview' }) {
             >
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div>
-                  <h2 className="text-base font-black text-slate-900 dark:text-white font-outfit">Inventory Stock Registry</h2>
+                  <h2 className="text-base font-black text-slate-900 dark:text-white font-outfit">Core Catalog & Service Menu</h2>
                   <p className="text-[11px] text-slate-400 font-medium">
-                    {products.length} product{products.length !== 1 ? 's' : ''} listed mapping active slots.
+                    List your core products or services here. This serves as your stable menu to minimize constant stock updating friction.
                   </p>
                 </div>
                 

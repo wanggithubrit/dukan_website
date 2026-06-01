@@ -318,7 +318,7 @@ export default function HomeDashboard() {
 
   const banners = useMemo(() => {
     return bannerResponse.length > 0 ? bannerResponse : [
-      { id: '_d1', banner_type: 'text', title: 'MYDUKAN', subtitle: 'Make local shopping easy', small_text: 'Save time · energy · money', background_color: '#0f3d28' },
+      { id: '_d1', banner_type: 'text', title: 'MyDukan', subtitle: 'Make local shopping easy', small_text: 'Save time · energy · money', background_color: '#0f3d28' },
       { id: '_d2', banner_type: 'text', title: 'Live Store Status', subtitle: 'Know if a shop is open before you leave', small_text: 'New on MyDukan', background_color: '#0a3347' },
       { id: '_d3', banner_type: 'text', title: 'Shop by Category', subtitle: '12+ categories, thousands of local products', small_text: 'Browse Smart', background_color: '#2d1b69' },
     ];
@@ -989,9 +989,9 @@ export default function HomeDashboard() {
           <div className="dkn-header-inner">
             <Link href="/" className="dkn-logo">
               <div className="dkn-logo-mark" style={{ width: 36, height: 36, minWidth: 36, minHeight: 36, background: 'var(--g-pale)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(10,92,67,0.10)' }}>
-                <Image src="/logo_green.png" alt="MYDUKAN" width={28} height={28} style={{ width: 28, height: 28 }} />
+                <Image src="/logo_green.png" alt="MyDukan" width={28} height={28} style={{ width: 28, height: 28 }} />
               </div>
-              <span className="dkn-logo-text" style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.03em', marginLeft: 8 }}>MY<span style={{ color: 'var(--g)' }}>DUKAN</span></span>
+              <span className="dkn-logo-text" style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.03em', marginLeft: 8 }}>My<span style={{ color: 'var(--g)' }}>Dukan</span></span>
             </Link>
 
             <button className="dkn-loc-pill" onClick={requestLocation}>
@@ -1030,9 +1030,9 @@ export default function HomeDashboard() {
           <div className="dkn-mobile-top">
             <Link href="/" className="dkn-logo" style={{ flexShrink: 0 }}>
               <div style={{ width: 32, height: 32, minWidth: 32, minHeight: 32, background: 'var(--g-pale)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Image src="/logo_green.png" alt="MYDUKAN" width={24} height={24} style={{ width: 24, height: 24 }} />
+                <Image src="/logo_green.png" alt="MyDukan" width={24} height={24} style={{ width: 24, height: 24 }} />
               </div>
-              <span className="dkn-logo-text" style={{ fontSize: 17, fontWeight: 900, letterSpacing: '-0.02em', marginLeft: 6 }}>MY<span style={{ color: 'var(--g)' }}>DUKAN</span></span>
+              <span className="dkn-logo-text" style={{ fontSize: 17, fontWeight: 900, letterSpacing: '-0.02em', marginLeft: 6 }}>My<span style={{ color: 'var(--g)' }}>Dukan</span></span>
             </Link>
 
             <button className="dkn-mob-loc" onClick={requestLocation}>
@@ -1105,7 +1105,7 @@ export default function HomeDashboard() {
 
               <div className="dkn-hero-right">
                 <div className="dkn-hero-img-wrap">
-                  <Image src={heroIllustration} alt="MyDukan app" priority fill style={{ objectFit: 'contain', objectPosition: 'bottom center' }} />
+                  <Image src={heroIllustration} alt="MyDukan app" priority fill sizes="(max-width: 768px) 100vw, 500px" style={{ objectFit: 'contain', objectPosition: 'bottom center' }} />
                 </div>
                 <div className="dkn-hero-floater f1">
                   <div className="dkn-floater-icon"><Store size={14} style={{ color: 'var(--g)' }} /></div>
@@ -1270,7 +1270,7 @@ export default function HomeDashboard() {
                       </div>
                     )}
                     <div className="dkn-banner-eyebrow">{b.small_text || 'Save time · energy · money'}</div>
-                    <div className="dkn-banner-title">{b.title || 'MYDUKAN'}</div>
+                    <div className="dkn-banner-title">{b.title || 'MyDukan'}</div>
                     <div className="dkn-banner-sub">{b.subtitle || 'Make local shopping easy'}</div>
                   </div>
                 );

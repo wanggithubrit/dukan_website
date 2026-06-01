@@ -73,7 +73,7 @@ export default function AboutPage() {
 
           <div className="text-sm text-slate-655 dark:text-slate-350 space-y-5 leading-relaxed font-medium">
             <p className="text-base text-[#0A5C43] font-extrabold leading-normal">
-              Dukan is a hyperlocal marketplace designed to help people discover nearby shops, products, and offers in their community.
+              MyDukan is a hyperlocal marketplace designed to help people discover nearby shops, products, and offers in their community.
             </p>
 
             <p>
@@ -81,7 +81,7 @@ export default function AboutPage() {
             </p>
 
             <p>
-              Whether you&apos;re looking for groceries, fashion, electronics, restaurants, or other local services, Dukan brings local commerce closer to you.
+              Whether you&apos;re looking for groceries, fashion, electronics, restaurants, or other local services, MyDukan brings local commerce closer to you.
             </p>
 
             <p>

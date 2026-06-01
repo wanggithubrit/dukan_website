@@ -5,8 +5,17 @@ import Link from 'next/link';
 import { Compass, ShoppingBag, Store, Navigation, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function ProductCard({ item, showShopInfo = true }) {
-  const imageUrl = item.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop&q=60';
+export default function ProductCard({ item, showShopInfo = true, shopPhone, shopWhatsApp }) {
+  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api\/?$/, '');
+  const normalizeImageUrl = (img) => {
+    if (!img || typeof img !== 'string') return '';
+    const value = img.trim();
+    if (!value) return '';
+    if (/^https?:\/\//i.test(value)) return value;
+    if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
+    return `${API_BASE_URL}/${value.replace(/^\/+/, '')}`;
+  };
+  const imageUrl = normalizeImageUrl(item.image) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop&q=60';
   
   // Dynamic stock logic directly mapping core serializers get_quantity_status
   const isOut = item.quantity_status === 'out';
@@ -114,6 +123,21 @@ export default function ProductCard({ item, showShopInfo = true }) {
                   <span>Visit Store</span>
                 </Link>
               </motion.div>
+            </div>
+          )}
+          {!showShopInfo && (shopWhatsApp || shopPhone || item.shop_details?.phone) && (
+            <div className="border-t border-slate-100 pt-3 mt-1">
+              <motion.a
+                href={`https://wa.me/${(shopWhatsApp || shopPhone || item.shop_details?.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I am interested in "${item.name}" from your shop. Can you please check the price / provide a quote?`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full text-center py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg text-white font-black text-[10px] tracking-wide transition-all flex items-center justify-center gap-1 shadow-md"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span>Check Price / Request Quote</span>
+              </motion.a>
             </div>
           )}
         </div>
