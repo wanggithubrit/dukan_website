@@ -1057,7 +1057,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
                     <Eye className="w-4 h-4" />
                   </div>
                   <span className="text-xl font-black text-slate-900 dark:text-white font-outfit">{stats.views || 0}</span>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Views</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Views (Week)</span>
                 </div>
               </div>
 
@@ -1832,7 +1832,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
                   <div className="bg-[#F5F8F5] dark:bg-slate-950/60 rounded-2xl p-3 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-900/60">
                     <Eye className="w-4 h-4 text-[#2F5D50] mb-1" />
                     <span className="text-sm font-black text-slate-900 dark:text-white font-outfit">{stats.views || 0}</span>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Views</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Views (Week)</span>
                   </div>
                 </div>
               </div>
