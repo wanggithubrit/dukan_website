@@ -1473,8 +1473,8 @@ function DashboardContent({ defaultTab = 'overview' }) {
                                 <span className="text-[7.5px] sm:text-[9.5px] uppercase font-semibold text-[#BDE2D7] block tracking-[0.14em] leading-none font-sans">
                                   {b.small_text || 'SAVE YOUR TIME, ENERGY AND MONEY.'}
                                 </span>
-                                <h3 className="font-black text-lg sm:text-2xl mt-2 leading-none font-outfit max-w-lg text-white uppercase tracking-[0.05em]">
-                                  {b.title || 'Dukan'}
+                                <h3 className="font-black text-lg sm:text-2xl mt-2 leading-none font-outfit max-w-lg text-white tracking-[0.05em]">
+                                  {(b.title && b.title !== 'MYDUKAN' && b.title !== 'Dukan') ? b.title : 'mydukan'}
                                 </h3>
                                 {b.discount && (
                                   <span className="inline-block mt-1 bg-brand-green-600/90 text-white text-[7px] font-black uppercase tracking-wider px-1 py-0.5 rounded leading-none">
@@ -1484,8 +1484,8 @@ function DashboardContent({ defaultTab = 'overview' }) {
                               </div>
 
                               <div className="z-20 relative text-left flex justify-between items-end gap-3">
-                                <p className="text-[8px] sm:text-[10px] text-white/95 uppercase tracking-[0.12em] font-extrabold leading-none font-sans truncate max-w-[200px] sm:max-w-md">
-                                  {b.subtitle || 'MAKE LOCAL SHOPPING EASY'}
+                                <p className="text-[8px] sm:text-[10px] text-white/95 tracking-[0.12em] font-extrabold leading-none font-sans truncate max-w-[200px] sm:max-w-md">
+                                  {b.subtitle && b.subtitle !== 'MAKE LOCAL SHOPPING EASY' ? b.subtitle : 'Make your local shopping easy nextime'}
                                 </p>
                               </div>
                             </motion.div>
