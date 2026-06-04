@@ -37,6 +37,10 @@ const CATEGORY_STYLES = {
   Stationery:  { emoji: '📝', gradient: 'from-sky-500 to-sky-700', bg: 'bg-sky-50', text: 'text-sky-700' },
   Furniture:   { emoji: '🛋️', gradient: 'from-violet-500 to-fuchsia-800', bg: 'bg-violet-50', text: 'text-violet-700' },
   Books:       { emoji: '📚', gradient: 'from-orange-600 to-red-800', bg: 'bg-orange-50', text: 'text-orange-700' },
+  'Home & Kitchen': { emoji: '🍳', gradient: 'from-emerald-550 to-teal-750', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  '🔧 Hardware & Tools': { emoji: '🔧', gradient: 'from-slate-550 to-slate-750', bg: 'bg-slate-50', text: 'text-slate-700' },
+  'Computers & Accessories': { emoji: '💻', gradient: 'from-blue-550 to-blue-750', bg: 'bg-blue-50', text: 'text-blue-700' },
+  '🎁 Gifts & Toys': { emoji: '🎁', gradient: 'from-rose-550 to-rose-750', bg: 'bg-rose-50', text: 'text-rose-700' },
   Others:      { emoji: '📦', gradient: 'from-slate-600 to-slate-800', bg: 'bg-slate-50', text: 'text-slate-700' },
 };
 

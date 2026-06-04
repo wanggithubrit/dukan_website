@@ -103,6 +103,10 @@ const CATEGORY_MAPPING = {
   Stationery:  { emoji: '📝', color: '#0c4a6e', bg: '#e0f2fe' },
   Furniture:   { emoji: '🛋️', color: '#4a1d96', bg: '#ede9fe' },
   Books:       { emoji: '📚', color: '#7c2d12', bg: '#fff7ed' },
+  'Home & Kitchen':           { emoji: '🍳', color: '#b45309', bg: '#fffbeb' },
+  '🔧 Hardware & Tools':     { emoji: '🔧', color: '#475569', bg: '#f1f5f9' },
+  'Computers & Accessories': { emoji: '💻', color: '#0369a1', bg: '#f0f9ff' },
+  '🎁 Gifts & Toys':         { emoji: '🎁', color: '#be185d', bg: '#fdf2f8' },
   Others:      { emoji: '📦', color: '#374151', bg: '#f3f4f6' },
 };
 const GLOBAL_CATEGORIES = Object.keys(CATEGORY_MAPPING);

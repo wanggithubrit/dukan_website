@@ -37,6 +37,10 @@ const CATEGORY_OPTIONS = [
   'Stationery',
   'Furniture',
   'Books',
+  'Home & Kitchen',
+  '🔧 Hardware & Tools',
+  'Computers & Accessories',
+  '🎁 Gifts & Toys',
   'Others',
 ];
 

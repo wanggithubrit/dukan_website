@@ -14,6 +14,10 @@ const CATEGORY_COLORS = {
   Stationery:  { bg: '#E0F2FE', text: '#0C4A6E', icon: '#0284C7' },
   Furniture:   { bg: '#F5F3FF', text: '#4C1D95', icon: '#6D28D9' },
   Books:       { bg: '#FFF7ED', text: '#9A3412', icon: '#EA580C' },
+  'Home & Kitchen':           { bg: '#FFFBEB', text: '#B45309', icon: '#D97706' },
+  '🔧 Hardware & Tools':     { bg: '#F1F5F9', text: '#475569', icon: '#64748B' },
+  'Computers & Accessories': { bg: '#F0F9FF', text: '#0369A1', icon: '#0284C7' },
+  '🎁 Gifts & Toys':         { bg: '#FDF2F8', text: '#BE185D', icon: '#DB2777' },
   Others:      { bg: '#F1F5F9', text: '#334155', icon: '#64748B' },
   All:         { bg: '#E6F4EF', text: '#065F46', icon: '#0A5C43' },
 };
@@ -22,13 +26,19 @@ const PLACEHOLDER_BG = {
   Grocery: '#C8E6CB', Footwear: '#FFF9C4', Fashion: '#F8BBD9',
   Medicine: '#FFCDD2', Electronics: '#BBDEFB', Bakeries: '#FFE082',
   Rentals: '#D1C4E9', Stationery: '#B3E5FC', Furniture: '#E1BEE7',
-  Books: '#FFE0B2', Others: '#CFD8DC',
+  Books: '#FFE0B2',
+  'Home & Kitchen': '#FEF3C7', '🔧 Hardware & Tools': '#E2E8F0',
+  'Computers & Accessories': '#E0F2FE', '🎁 Gifts & Toys': '#FCE7F3',
+  Others: '#CFD8DC',
 };
 
 const CATEGORY_EMOJI = {
   Grocery: '🛒', Footwear: '👟', Fashion: '👗', Medicine: '💊',
   Electronics: '📱', Bakeries: '🥖', Rentals: '🔑', Stationery: '📝',
-  Furniture: '🛋️', Books: '📚', Others: '📦',
+  Furniture: '🛋️', Books: '📚',
+  'Home & Kitchen': '🍳', '🔧 Hardware & Tools': '🔧',
+  'Computers & Accessories': '💻', '🎁 Gifts & Toys': '🎁',
+  Others: '📦',
 };
 
 const PREMIUM_PLANS = ['Pro', 'Business', 'Premium', 'pro', 'business', 'premium'];
