@@ -682,7 +682,21 @@ export default function ShopDetailPage() {
 
 
               <motion.button
-                onClick={() => showToast("Opening MyDukan app...", "info")}
+                onClick={() => {
+                  showToast("Opening MyDukan app...", "info");
+                  const deepLink = `dukan://shop/${shop.id}`;
+                  const playStoreUrl = "https://play.google.com/store/apps/details?id=com.mydukan.dukanapp";
+                  
+                  // Attempt to open deep link scheme, fallback to Play Store after timeout
+                  const start = Date.now();
+                  window.location.href = deepLink;
+                  
+                  setTimeout(() => {
+                    if (Date.now() - start < 1500) {
+                      window.location.href = playStoreUrl;
+                    }
+                  }, 1000);
+                }}
                 className="bg-linear-to-r from-green-600 to-green-700 hover:shadow-lg text-white font-bold text-xs px-4 py-3 rounded-xl flex items-center gap-1.5 transition-shadow"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
