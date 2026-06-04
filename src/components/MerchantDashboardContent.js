@@ -2119,7 +2119,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
                   </a>
 
                   <a 
-                    href="https://www.youtube.com/@dukan-316"
+                    href="https://www.youtube.com/channel/UCL1BkfKBa89jjHgudjR8P7g"
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-850/60 transition-all shadow-2xs group"
@@ -2129,7 +2129,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
                     </div>
                     <div className="min-w-0">
                       <h5 className="text-[11px] font-black text-[#0F2118] dark:text-white leading-none">YouTube</h5>
-                      <span className="text-[9px] text-slate-400 mt-1 block truncate font-medium">@dukan-316</span>
+                      <span className="text-[9px] text-slate-400 mt-1 block leading-tight font-medium">Subscribe for tutorials and many more</span>
                     </div>
                   </a>
                 </div>

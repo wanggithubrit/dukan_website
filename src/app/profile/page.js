@@ -341,7 +341,7 @@ export default function CustomerProfilePage() {
 
             {/* YouTube */}
             <a 
-              href="https://www.youtube.com/@dukan-316"
+              href="https://www.youtube.com/channel/UCL1BkfKBa89jjHgudjR8P7g"
               target="_blank" rel="noopener noreferrer"
               className="bg-white border border-[#E4EDE9] rounded-2xl p-3 flex items-center gap-3 hover:bg-slate-50 transition-all text-left shadow-2xs group"
             >
@@ -350,7 +350,7 @@ export default function CustomerProfilePage() {
               </div>
               <div className="min-w-0">
                 <h4 className="text-xs font-bold text-[#0F1F1B] leading-none">YouTube</h4>
-                <span className="text-[9px] text-[#6B8A82] font-semibold mt-1 block truncate">@dukand-316</span>
+                <span className="text-[9px] text-[#6B8A82] font-semibold mt-1 block leading-tight">Subscribe for tutorials and many more</span>
               </div>
             </a>
 
