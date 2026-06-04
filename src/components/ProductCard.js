@@ -125,21 +125,7 @@ export default function ProductCard({ item, showShopInfo = true, shopPhone, shop
               </motion.div>
             </div>
           )}
-          {!showShopInfo && (shopWhatsApp || shopPhone || item.shop_details?.phone) && (
-            <div className="border-t border-slate-100 pt-3 mt-1">
-              <motion.a
-                href={`https://wa.me/${(shopWhatsApp || shopPhone || item.shop_details?.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I am interested in "${item.name}" from your shop. Can you please check the price / provide a quote?`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full text-center py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg text-white font-black text-[10px] tracking-wide transition-all flex items-center justify-center gap-1 shadow-md"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <span>Check Price / Request Quote</span>
-              </motion.a>
-            </div>
-          )}
+
         </div>
       </div>
     </motion.div>

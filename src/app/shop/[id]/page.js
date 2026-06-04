@@ -10,7 +10,7 @@ import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { useUserCoordinates } from '@/hooks/useUserCoordinates';
 import {
-  ArrowLeft, Phone, MapPin, Share2, Heart, Smartphone, Zap, Compass, ShoppingBag, ChevronRight, Search, X, Sparkles, AlertCircle
+  ArrowLeft, Phone, MapPin, Share2, Heart, Smartphone, Zap, Compass, ShoppingBag, ChevronRight, Search, X, Sparkles, AlertCircle, Clock
 } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
 
@@ -45,6 +45,18 @@ const getInitials = (name) => {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+const formatTime = (timeStr) => {
+  if (!timeStr) return '';
+  const parts = timeStr.split(':');
+  if (parts.length < 2) return timeStr;
+  let hours = parseInt(parts[0], 10);
+  const minutes = parts[1];
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  return `${hours}:${minutes} ${ampm}`;
 };
 
 // Color Palette - Premium Green Theme
@@ -181,22 +193,10 @@ const ItemModal = ({ item, visible, onClose, shop }) => {
                 )}
 
                 {/* Footer Action Button */}
-                <div className="pt-4 border-t border-slate-100 flex gap-2">
-                  {targetPhone && (
-                    <motion.a
-                      href={`https://wa.me/${targetPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I am interested in "${item.name}" from your shop. Can you please check the price / provide a quote?`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <span>Check Price / Quote</span>
-                    </motion.a>
-                  )}
+                <div className="pt-4 border-t border-slate-100 flex justify-end">
                   <motion.button
                     onClick={onClose}
-                    className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center"
+                    className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -614,6 +614,18 @@ export default function ShopDetailPage() {
                     </p>
                   </div>
                 </div>
+
+                {shop.opening_time && shop.closing_time && (
+                  <div className="mt-2.5 flex items-center gap-2 bg-emerald-50/60 border border-emerald-100 rounded-xl px-3.5 py-2 w-fit text-xs font-bold text-emerald-800">
+                    <Clock className="w-4 h-4 text-green-700 shrink-0" />
+                    <span>
+                      Business Hours:{' '}
+                      <span className="font-black text-green-800">
+                        {formatTime(shop.opening_time)} – {formatTime(shop.closing_time)}
+                      </span>
+                    </span>
+                  </div>
+                )}
 
                 {shop.description && (
                   <div className="mt-3.5 pt-3 border-t border-slate-100/80 text-xs text-slate-600 max-w-xl text-left bg-slate-50/50 p-3 rounded-xl border border-slate-200/40">
