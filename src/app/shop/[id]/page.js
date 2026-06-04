@@ -102,9 +102,18 @@ const SkeletonLoader = ({ className = '' }) => (
 
 // Item Modal Component
 const ItemModal = ({ item, visible, onClose, shop }) => {
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  useEffect(() => {
+    if (visible) {
+      setActiveImageIndex(0);
+    }
+  }, [item, visible]);
+
   if (!item) return null;
 
   const targetPhone = shop?.whatsapp_number || shop?.phone || '';
+  const images = [item.image, item.image2, item.image3].filter(Boolean);
 
   return (
     <AnimatePresence>
@@ -137,18 +146,43 @@ const ItemModal = ({ item, visible, onClose, shop }) => {
             {/* Landscape Product Image */}
             <div className="relative w-full aspect-[16/11] bg-slate-50 overflow-hidden shrink-0">
               <motion.img
-                src={normalizeImageUrl(item.image) || PLACEHOLDER_IMAGE}
+                key={activeImageIndex}
+                src={normalizeImageUrl(images[activeImageIndex]) || PLACEHOLDER_IMAGE}
                 alt={item.name}
                 className="w-full h-full object-cover"
-                initial={{ scale: 1.05 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.4 }}
+                initial={{ opacity: 0.8 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
                 onError={(e) => {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src = PLACEHOLDER_IMAGE;
                 }}
               />
-              <div className="absolute inset-0 bg-linear-to-t from-black/15 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/15 to-transparent pointer-events-none" />
+
+              {/* Prev / Next Arrows */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+                    }}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white text-slate-800 flex items-center justify-center shadow-md transition-all active:scale-90 font-bold"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white text-slate-800 flex items-center justify-center shadow-md transition-all active:scale-90 font-bold"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
 
               {/* Floating Absolute Price Badge */}
               {item.price !== null && item.price !== undefined && (
@@ -163,6 +197,23 @@ const ItemModal = ({ item, visible, onClose, shop }) => {
             {/* Details Content */}
             <div className="p-5 text-left">
               <div className="space-y-4">
+                {/* Thumbnails list row */}
+                {images.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto py-1">
+                    {images.map((img, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActiveImageIndex(idx)}
+                        className={`w-14 h-10 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${
+                          activeImageIndex === idx ? 'border-green-600 scale-102' : 'border-transparent opacity-75 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={normalizeImageUrl(img)} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {/* Title */}
                 <h2 className="text-base sm:text-lg font-black text-slate-900 leading-snug line-clamp-2">
                   {item.name}
