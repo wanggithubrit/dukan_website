@@ -15,6 +15,7 @@ export default function ProductCard({ item, showShopInfo = true, shopPhone, shop
     if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
     return `${API_BASE_URL}/${value.replace(/^\/+/, '')}`;
   };
+  const images = [item.image, item.image2, item.image3].filter(Boolean);
   const imageUrl = normalizeImageUrl(item.image) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop&q=60';
   
   // Dynamic stock logic directly mapping core serializers get_quantity_status
@@ -42,6 +43,13 @@ export default function ProductCard({ item, showShopInfo = true, shopPhone, shop
           loading="lazy"
         />
         
+        {/* Photo Count Badge */}
+        {images.length > 1 && (
+          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-white text-[8px] font-black tracking-wider uppercase z-10 shadow-sm border border-white/5">
+            {images.length} Photos
+          </div>
+        )}
+
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 

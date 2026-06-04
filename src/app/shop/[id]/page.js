@@ -160,6 +160,13 @@ const ItemModal = ({ item, visible, onClose, shop }) => {
               />
               <div className="absolute inset-0 bg-linear-to-t from-black/15 to-transparent pointer-events-none" />
 
+              {/* Photo Count Indicator */}
+              {images.length > 1 && (
+                <div className="absolute top-3.5 left-3.5 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-white text-[8px] font-black tracking-wider uppercase z-10 shadow-sm border border-white/5">
+                  {activeImageIndex + 1} of {images.length}
+                </div>
+              )}
+
               {/* Prev / Next Arrows */}
               {images.length > 1 && (
                 <>
