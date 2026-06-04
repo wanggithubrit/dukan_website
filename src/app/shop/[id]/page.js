@@ -163,7 +163,7 @@ const ItemModal = ({ item, visible, onClose, shop }) => {
               {/* Photo Count Indicator */}
               {images.length > 1 && (
                 <div className="absolute top-3.5 left-3.5 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-white text-[8px] font-black tracking-wider uppercase z-10 shadow-sm border border-white/5">
-                  {activeImageIndex + 1} of {images.length}
+                  {activeImageIndex + 1} of {images.length} Photos
                 </div>
               )}
 
