@@ -41,7 +41,8 @@ import {
   MessageSquare,
   Mail,
   Check,
-  ExternalLink
+  ExternalLink,
+  Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -1051,6 +1052,13 @@ function DashboardContent({ defaultTab = 'overview' }) {
                   <span className="text-xl font-black text-slate-900 dark:text-white font-outfit">{stats.followers || 0}</span>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Followers</span>
                 </div>
+                <div className="flex flex-col items-center flex-1 gap-1 text-center">
+                  <div className="w-8 h-8 rounded-lg bg-brand-green-50 dark:bg-brand-green-950/40 flex items-center justify-center text-brand-green-600 dark:text-brand-green-400 mb-1">
+                    <Eye className="w-4 h-4" />
+                  </div>
+                  <span className="text-xl font-black text-slate-900 dark:text-white font-outfit">{stats.views || 0}</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Views</span>
+                </div>
               </div>
 
 
@@ -1817,14 +1825,14 @@ function DashboardContent({ defaultTab = 'overview' }) {
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Followers</span>
                   </div>
                   <div className="bg-[#F5F8F5] dark:bg-slate-950/60 rounded-2xl p-3 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-900/60">
-                    <ImageIcon className="w-4 h-4 text-[#2F5D50] mb-1" />
-                    <span className="text-sm font-black text-slate-900 dark:text-white font-outfit">{gallery.length}/{isPro ? 5 : 1}</span>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Images</span>
-                  </div>
-                  <div className="bg-[#F5F8F5] dark:bg-slate-950/60 rounded-2xl p-3 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-900/60">
                     <ShoppingBag className="w-4 h-4 text-[#2F5D50] mb-1" />
                     <span className="text-sm font-black text-slate-900 dark:text-white font-outfit">{products.length}</span>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Items</span>
+                  </div>
+                  <div className="bg-[#F5F8F5] dark:bg-slate-950/60 rounded-2xl p-3 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-900/60">
+                    <Eye className="w-4 h-4 text-[#2F5D50] mb-1" />
+                    <span className="text-sm font-black text-slate-900 dark:text-white font-outfit">{stats.views || 0}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Views</span>
                   </div>
                 </div>
               </div>
