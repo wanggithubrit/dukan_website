@@ -39,6 +39,7 @@ export default function MerchantSignupPage() {
     shopName: '',
     category: '',
     address: '',
+    referralCode: '',
   });
 
   // UI state
@@ -63,6 +64,17 @@ export default function MerchantSignupPage() {
   // Cleanup timer on unmount
   useEffect(() => {
     return () => clearInterval(intervalRef.current);
+  }, []);
+
+  // Parse referralCode from URL on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('referralCode');
+      if (code) {
+        setForm((prev) => ({ ...prev, referralCode: code }));
+      }
+    }
   }, []);
 
   const updateField = useCallback((key, value) => {
@@ -258,6 +270,7 @@ export default function MerchantSignupPage() {
           latitude: location.latitude,
           longitude: location.longitude,
           address: form.address,
+          referral_code: form.referralCode?.trim() || undefined,
         }),
       });
 
@@ -307,6 +320,24 @@ export default function MerchantSignupPage() {
           </div>
 
           <div className="space-y-5">
+            {/* Referral Code (optional) */}
+            <div>
+              <label className="block text-xs font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wide mb-2">
+                Referral Code (Optional)
+              </label>
+              <div className="relative">
+                <Store className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  value={form.referralCode}
+                  onChange={(e) => updateField('referralCode', e.target.value)}
+                  placeholder="Enter referral code"
+                  aria-label="Referral Code"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-green-600 focus:bg-white dark:focus:bg-slate-950 transition"
+                />
+              </div>
+            </div>
+
             {/* Username */}
             <div>
               <label className="block text-xs font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wide mb-2">
