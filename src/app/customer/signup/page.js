@@ -292,7 +292,7 @@ export default function CustomerSignupPage() {
                   className="mt-3 p-4 bg-green-50 dark:bg-brand-green-950/10 border border-green-200 dark:border-brand-green-900/30 rounded-lg space-y-3"
                 >
                   <p className="text-xs text-green-900 dark:text-green-300 font-medium">
-                    Enter the OTP sent to <strong>{form.email}</strong>
+                    Enter the OTP sent to <strong>{form.email}</strong>. Please wait up to 10 seconds for the email to arrive.
                   </p>
                   <div className="flex gap-2">
                     <input
