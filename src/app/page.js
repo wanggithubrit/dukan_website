@@ -27,6 +27,16 @@ const formatDistance = (distance) => {
 };
 const LOC_STORAGE_KEY = 'dukand_coords';
 
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api\/?$/, '');
+const normalizeImageUrl = (img) => {
+  if (!img || typeof img !== 'string') return '';
+  const value = img.trim();
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+  if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
+  return `${API_BASE_URL}/${value.replace(/^\/+/, '')}`;
+};
+
 const CATEGORY_MAPPING = {
   All:         { emoji: '🏪', color: '#1a5c3a', bg: '#e8f5ee' },
   Grocery:     { emoji: '🛒', color: '#166534', bg: '#dcfce7' },
@@ -235,8 +245,8 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
                       <Link key={shop.id} href={`/shop/${shop.id}`} onClick={onClose} className="dkn-mini-card">
                         {PREMIUM_PLANS.includes(shop.plan) && <span className="dkn-pro-badge"><Award size={9} />PRO</span>}
                         <div className="dkn-mini-img">
-                          {shop.cover_image || shop.image
-                            ? <img src={shop.cover_image || shop.image} alt={shop.name} />
+                           {shop.cover_image || shop.image
+                            ? <img src={normalizeImageUrl(shop.cover_image || shop.image)} alt={shop.name} />
                             : <span>{CATEGORY_MAPPING[shop.category]?.emoji || '🏪'}</span>}
                         </div>
                         <div className="dkn-mini-body">
@@ -259,7 +269,7 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
                     {productResults.map((item, i) => (
                       <Link key={`${item.shopId}-${item.id || i}`} href={`/shop/${item.shopId}`} onClick={onClose} className="dkn-mini-card">
                         <div className="dkn-mini-img">
-                          {item.image ? <img src={item.image} alt={item.name} /> : <Package size={20} className="dkn-pkg-ico" />}
+                           {item.image ? <img src={normalizeImageUrl(item.image)} alt={item.name} /> : <Package size={20} className="dkn-pkg-ico" />}
                         </div>
                         <div className="dkn-mini-body">
                           <p className="dkn-mini-name"><Highlight text={item.name} query={query} /></p>
@@ -1220,7 +1230,7 @@ export default function HomeDashboard() {
                       onClick={() => handleBannerClick(b)}
                       style={{ cursor: b.link ? 'pointer' : 'default' }}
                     >
-                      <img src={b.image} alt="banner" />
+                      <img src={normalizeImageUrl(b.image)} alt="banner" />
                       {b.link && (
                         <div className="dkn-banner-link-icon" style={{
                           position: 'absolute',
@@ -1323,7 +1333,7 @@ export default function HomeDashboard() {
                       <Link key={`open-${shop.id}`} href={`/shop/${shop.id}`} className="dkn-shop-card">
                         <div className="dkn-card-img">
                           {shop.cover_image || shop.image
-                            ? <img src={shop.cover_image || shop.image} alt={shop.name} />
+                            ? <img src={normalizeImageUrl(shop.cover_image || shop.image)} alt={shop.name} />
                             : <span>{meta.emoji}</span>}
                           <div className="dkn-open-pill"><span className="dkn-open-dot" />Open</div>
                           {isPremium && <span className="dkn-pro-badge"><Award size={8} />PRO</span>}
@@ -1424,7 +1434,7 @@ export default function HomeDashboard() {
                             )}
                             <div className="dkn-gc-img">
                               {shop.cover_image || shop.image
-                                ? <img src={shop.cover_image || shop.image} alt={shop.name} />
+                                ? <img src={normalizeImageUrl(shop.cover_image || shop.image)} alt={shop.name} />
                                 : <span>{meta.emoji}</span>}
                             </div>
                             <div className="dkn-gc-body">

@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { useTheme } from '@/context/ThemeContext';
 import api from '@/utils/api';
+import SupportCard from '@/components/SupportCard';
 import AdBanner from '@/components/AdBanner';
 import { 
   Store, 
@@ -140,6 +142,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
   const actionParam = searchParams.get('action');
+  const { themeKey, changeTheme, themes } = useTheme();
 
   const [activeTab, setActiveTab] = useState(defaultTab); // overview | discover | profile | products | banners | gallery | referrals
 
@@ -196,6 +199,9 @@ function DashboardContent({ defaultTab = 'overview' }) {
     latitude: '',
     longitude: '',
     description: '',
+    opening_time: '',
+    closing_time: '',
+    auto_reminder_enabled: false,
   });
 
   const [products, setProducts] = useState([]);
@@ -209,6 +215,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
     track_quantity: false,
     imageFile: null,
     imagePreview: '',
+    notify_customers: false,
   });
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(false);
@@ -358,6 +365,9 @@ function DashboardContent({ defaultTab = 'overview' }) {
           latitude: s.latitude || '',
           longitude: s.longitude || '',
           description: s.description || '',
+          opening_time: s.opening_time || '',
+          closing_time: s.closing_time || '',
+          auto_reminder_enabled: s.auto_reminder_enabled || false,
         });
         
         // Load products for the shop
@@ -478,7 +488,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
   };
 
   // ==================== PRODUCT CRUD INTEGRATION ====================
-  const handleOpenAddProduct = () => {
+  function handleOpenAddProduct() {
     setProductForm({
       id: null,
       name: '',
@@ -488,6 +498,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
       track_quantity: false,
       imageFile: null,
       imagePreview: '',
+      notify_customers: false,
     });
     setCoverForm({
       imageFile: null,
@@ -516,6 +527,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
       track_quantity: prod.track_quantity || false,
       imageFile: null,
       imagePreview: prod.image || '',
+      notify_customers: false,
     });
     setUploadMode('item');
     setEditingProduct(true);
@@ -568,6 +580,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
     formData.append('price', parseFloat(productForm.price));
     formData.append('quantity', parseInt(productForm.quantity));
     formData.append('track_quantity', productForm.track_quantity ? 'true' : 'false');
+    formData.append('notify_customers', productForm.notify_customers ? 'true' : 'false');
     
     if (productForm.imageFile) {
       formData.append('image', productForm.imageFile);
@@ -1902,6 +1915,39 @@ function DashboardContent({ defaultTab = 'overview' }) {
                 </button>
               </div>
 
+              {/* THEME SELECTION SECTION */}
+              <div className="space-y-2.5 text-left">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">App Theme Accent</h4>
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 shadow-xs">
+                  <div className="grid grid-cols-2 gap-3">
+                    {Object.keys(themes).map((key) => {
+                      const active = themeKey === key;
+                      const t = themes[key];
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => changeTheme(key)}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer ${
+                            active ? 'border-[#3D7A68] ring-2 ring-[#2F5D50]/15' : 'border-slate-100 dark:border-slate-850'
+                          }`}
+                        >
+                          <div 
+                            className="w-5 h-5 rounded-full shrink-0 border border-black/10"
+                            style={{ backgroundColor: t.primary }}
+                          />
+                          <div className="min-w-0">
+                            <span className="text-[11px] font-bold text-slate-900 dark:text-white block truncate leading-none">{t.name}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* SUPPORT MYDUKAN CARD */}
+              <SupportCard platform="merchant" />
+
               {/* QR TRIGGER BUTTON */}
               <button
                 onClick={() => setShowQRModal(true)}
@@ -2093,6 +2139,50 @@ function DashboardContent({ defaultTab = 'overview' }) {
                           onChange={(e) => setShopForm({ ...shopForm, description: e.target.value })}
                           className="w-full text-xs p-3 rounded-xl border-2 border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-[#1A6B3A] transition-colors resize-none"
                         />
+                      </div>
+
+                      {/* Auto Open/Close Setting Section */}
+                      <div className="border-t border-[#D6E8D6] dark:border-slate-800 pt-3 mt-1 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <label className="text-xs font-black text-[#0F2118] dark:text-white uppercase tracking-wider block">Auto Open/Close Shop</label>
+                            <span className="text-[10px] text-slate-400 font-medium">Instantly change shop status based on time boundaries</span>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox"
+                              checked={shopForm.auto_reminder_enabled}
+                              onChange={(e) => setShopForm({ ...shopForm, auto_reminder_enabled: e.target.checked })}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                          </label>
+                        </div>
+
+                        {shopForm.auto_reminder_enabled && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-[#4A6B55] dark:text-slate-400 uppercase tracking-wider block">Opening Time</label>
+                              <input
+                                type="time"
+                                required={shopForm.auto_reminder_enabled}
+                                value={shopForm.opening_time ? shopForm.opening_time.slice(0, 5) : ''}
+                                onChange={(e) => setShopForm({ ...shopForm, opening_time: e.target.value })}
+                                className="w-full text-xs p-3 rounded-xl border-2 border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-[#1A6B3A] transition-colors"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-[#4A6B55] dark:text-slate-400 uppercase tracking-wider block">Closing Time</label>
+                              <input
+                                type="time"
+                                required={shopForm.auto_reminder_enabled}
+                                value={shopForm.closing_time ? shopForm.closing_time.slice(0, 5) : ''}
+                                onChange={(e) => setShopForm({ ...shopForm, closing_time: e.target.value })}
+                                className="w-full text-xs p-3 rounded-xl border-2 border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-[#1A6B3A] transition-colors"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <button
@@ -2859,6 +2949,23 @@ function DashboardContent({ defaultTab = 'overview' }) {
                             </button>
                           </div>
                         )}
+
+                        {/* Notify Customers Toggle on upload product */}
+                        <div className="flex items-center justify-between bg-white/80 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800/80 mt-2">
+                          <div>
+                            <h5 className="text-[11px] font-extrabold text-[#0F2118] dark:text-white">Notify Customers</h5>
+                            <p className="text-[9px] text-slate-450 dark:text-slate-400 font-medium">Broadcast new item update to favorites</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={productForm.notify_customers}
+                              onChange={(e) => setProductForm({ ...productForm, notify_customers: e.target.checked })}
+                              className="sr-only peer"
+                            />
+                            <div className="w-8 h-4 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+                          </label>
+                        </div>
                       </>
                     ) : (
                       <>

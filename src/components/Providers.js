@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
+import { ThemeProvider } from '@/context/ThemeContext';
+import GlobalSupportModal from '@/components/GlobalSupportModal';
 
 export default function Providers({ children }) {
   const [queryClient] = useState(
@@ -22,10 +24,14 @@ export default function Providers({ children }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+            <GlobalSupportModal />
+          </AuthProvider>
+        </ThemeProvider>
       </ToastProvider>
     </QueryClientProvider>
   );
 }
+

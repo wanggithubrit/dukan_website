@@ -12,7 +12,7 @@ import { useUserCoordinates } from '@/hooks/useUserCoordinates';
 import {
   ArrowLeft, Phone, MapPin, Share2, Heart, Smartphone, Zap, Compass, ShoppingBag, ChevronRight, Search, X, Sparkles, AlertCircle, Clock
 } from 'lucide-react';
-import AdBanner from '@/components/AdBanner';
+
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api\/?$/, '');
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80';
@@ -920,11 +920,7 @@ export default function ShopDetailPage() {
               )}
             </div>
           </motion.section>
-        ) : (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-            <AdBanner />
-          </div>
-        )}
+        ) : null}
       </AnimatePresence>
 
       {/* Search Bar & Products Section */}

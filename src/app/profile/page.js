@@ -20,6 +20,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SupportCard from '@/components/SupportCard';
+import { useTheme } from '@/context/ThemeContext';
 
 // Custom robust inline SVG icons for Instagram and YouTube
 const Instagram = (props) => (
@@ -70,6 +72,7 @@ export default function CustomerProfilePage() {
   const { user, logout } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
+  const { themeKey, changeTheme, themes } = useTheme();
 
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -241,6 +244,39 @@ export default function CustomerProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* THEME SELECTION SECTION */}
+        <div className="space-y-2">
+          <h3 className="text-[10px] font-bold text-[#A0BAB4] uppercase tracking-wider ml-1">App Theme Accent</h3>
+          <div className="bg-white border border-[#E4EDE9] rounded-2xl p-4 shadow-xs">
+            <div className="grid grid-cols-2 gap-3">
+              {Object.keys(themes).map((key) => {
+                const active = themeKey === key;
+                const t = themes[key];
+                return (
+                  <button
+                    key={key}
+                    onClick={() => changeTheme(key)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all hover:bg-slate-50 cursor-pointer ${
+                      active ? 'border-[#3D7A68] ring-2 ring-[#2F5D50]/15' : 'border-[#E4EDE9]'
+                    }`}
+                  >
+                    <div 
+                      className="w-5 h-5 rounded-full shrink-0 border border-black/10"
+                      style={{ backgroundColor: t.primary }}
+                    />
+                    <div className="min-w-0">
+                      <span className="text-[11px] font-bold text-[#0F1F1B] block truncate leading-none">{t.name}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        
+        {/* SUPPORT MYDUKAN CARD */}
+        <SupportCard platform="web" />
 
         {/* ACCOUNT LIST MATRIX OPTIONS */}
         <div className="space-y-2">

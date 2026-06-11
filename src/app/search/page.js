@@ -500,6 +500,7 @@ function SearchContent() {
             <div className="space-y-3 flex flex-col text-xs font-bold text-slate-500">
               <Link href="/about" className="hover:text-[#0A5C43] transition">About Us</Link>
               <Link href="/" className="hover:text-[#0A5C43] transition">Privacy Policy</Link>
+              <button onClick={() => window.dispatchEvent(new CustomEvent('open-support-modal'))} className="hover:text-[#0A5C43] transition text-left cursor-pointer border-0 bg-transparent p-0 font-bold">Support MyDukan ❤️</button>
             </div>
           </div>
           <div>
