@@ -700,20 +700,22 @@ export default function ShopDetailPage() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-2 border-t md:border-t-0 pt-4 md:pt-0 shrink-0">
-              <motion.a 
-                href={`tel:${shop.phone}`}
-                className="p-3 rounded-xl transition-colors"
-                style={{ backgroundColor: colors.primaryLight }}
-                whileHover={{ scale: 1.1, backgroundColor: colors.accent }}
-                whileTap={{ scale: 0.95 }}
-                title="Call"
-              >
-                <Phone className="w-5 h-5 text-green-700" />
-              </motion.a>
-
-              {shop.phone && (
+              {shop.phone && shop.is_open && (
                 <motion.a 
-                  href={`https://wa.me/${(shop.whatsapp_number || shop.phone).replace(/\D/g, '')}`}
+                  href={`tel:${shop.phone}`}
+                  className="p-3 rounded-xl transition-colors"
+                  style={{ backgroundColor: colors.primaryLight }}
+                  whileHover={{ scale: 1.1, backgroundColor: colors.accent }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Call"
+                >
+                  <Phone className="w-5 h-5 text-green-700" />
+                </motion.a>
+              )}
+
+              {shop.whatsapp_number && shop.is_open && (
+                <motion.a 
+                  href={`https://wa.me/${shop.whatsapp_number.replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-3 rounded-xl bg-green-100 hover:bg-green-200 transition-colors"
