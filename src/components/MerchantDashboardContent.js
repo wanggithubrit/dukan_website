@@ -44,7 +44,8 @@ import {
   Mail,
   Check,
   ExternalLink,
-  Eye
+  Eye,
+  Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -202,6 +203,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
     opening_time: '',
     closing_time: '',
     auto_reminder_enabled: false,
+    payment_policy: 'both',
   });
 
   const [products, setProducts] = useState([]);
@@ -368,6 +370,7 @@ function DashboardContent({ defaultTab = 'overview' }) {
           opening_time: s.opening_time || '',
           closing_time: s.closing_time || '',
           auto_reminder_enabled: s.auto_reminder_enabled || false,
+          payment_policy: s.payment_policy || 'both',
         });
         
         // Load products for the shop
@@ -1052,25 +1055,32 @@ function DashboardContent({ defaultTab = 'overview' }) {
               {/* Stats Row */}
               <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-around divide-x divide-slate-100 dark:divide-slate-800">
                 <div className="flex flex-col items-center flex-1 gap-1 text-center">
-                  <div className="w-8 h-8 rounded-lg bg-brand-green-50 dark:bg-brand-green-950/40 flex items-center justify-center text-brand-green-600 dark:text-brand-green-400 mb-1">
+                  <div className="w-8 h-8 rounded-lg bg-brand-green-50 dark:bg-brand-green-950/40 flex items-center justify-center text-brand-green-650 dark:text-brand-green-400 mb-1">
                     <ImageIcon className="w-4 h-4" />
                   </div>
                   <span className="text-xl font-black text-slate-900 dark:text-white font-outfit">{gallery.length}</span>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Posts</span>
                 </div>
                 <div className="flex flex-col items-center flex-1 gap-1 text-center">
-                  <div className="w-8 h-8 rounded-lg bg-brand-green-50 dark:bg-brand-green-950/40 flex items-center justify-center text-brand-green-600 dark:text-brand-green-400 mb-1">
+                  <div className="w-8 h-8 rounded-lg bg-brand-green-50 dark:bg-brand-green-950/40 flex items-center justify-center text-brand-green-650 dark:text-brand-green-400 mb-1">
                     <Users className="w-4 h-4" />
                   </div>
                   <span className="text-xl font-black text-slate-900 dark:text-white font-outfit">{stats.followers || 0}</span>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Followers</span>
                 </div>
                 <div className="flex flex-col items-center flex-1 gap-1 text-center">
-                  <div className="w-8 h-8 rounded-lg bg-brand-green-50 dark:bg-brand-green-950/40 flex items-center justify-center text-brand-green-600 dark:text-brand-green-400 mb-1">
+                  <div className="w-8 h-8 rounded-lg bg-brand-green-50 dark:bg-brand-green-950/40 flex items-center justify-center text-brand-green-650 dark:text-brand-green-400 mb-1">
                     <Eye className="w-4 h-4" />
                   </div>
                   <span className="text-xl font-black text-slate-900 dark:text-white font-outfit">{stats.views || 0}</span>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Views (Week)</span>
+                </div>
+                <div className="flex flex-col items-center flex-1 gap-1 text-center">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center text-amber-500 mb-1">
+                    <Star className="w-4 h-4 fill-amber-500" />
+                  </div>
+                  <span className="text-xl font-black text-slate-900 dark:text-white font-outfit">{s.average_rating ? Number(s.average_rating).toFixed(1) : '0.0'}</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Rating ({s.total_ratings || 0})</span>
                 </div>
               </div>
 
@@ -2183,6 +2193,40 @@ function DashboardContent({ defaultTab = 'overview' }) {
                             </div>
                           </div>
                         )}
+                      </div>
+
+                      <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <label className="text-xs font-black text-[#0F2118] dark:text-white uppercase tracking-wider block">Payment Option Policy</label>
+                        <span className="text-[10px] text-slate-400 font-medium">Choose how customers can pay for orders</span>
+                        
+                        <div className="space-y-2">
+                          {[
+                            { key: 'cod', label: 'Cash on Delivery (COD) only' },
+                            { key: 'contact', label: 'Merchant contact only (No COD)' },
+                            { key: 'both', label: 'COD or Merchant contact for payment' }
+                          ].map((opt) => {
+                            const isSelected = shopForm.payment_policy === opt.key;
+                            return (
+                              <button
+                                key={opt.key}
+                                type="button"
+                                onClick={() => setShopForm({ ...shopForm, payment_policy: opt.key })}
+                                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border text-xs text-left transition-all ${
+                                  isSelected 
+                                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 font-bold' 
+                                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'
+                                }`}
+                              >
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                  isSelected ? 'border-emerald-600' : 'border-slate-350 dark:border-slate-650'
+                                }`}>
+                                  {isSelected && <div className="w-2 h-2 rounded-full bg-emerald-600" />}
+                                </div>
+                                <span>{opt.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       <button

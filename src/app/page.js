@@ -12,13 +12,13 @@ import heroIllustration from '../../public/hero-illustration.png';
 import {
   MapPin, Search, Clock, Store, ChevronDown, Heart,
   LayoutGrid, X, Package, ArrowRight, Navigation, Award,
-  AlertCircle, Loader2, Building2, Download,
+  AlertCircle, Loader2, Building2, Download, CheckCircle, Star
 } from 'lucide-react';
 
 /* ─── CONSTANTS ───────────────────────────────────────────────────────────── */
 const PAGE_SIZE = 6;
 const RANGES = ['All', 1, 5, 10, 25];
-const PREMIUM_PLANS = ['Pro', 'Business', 'Premium', 'pro', 'business', 'premium'];
+const PREMIUM_PLANS = ['Pro', 'Business', 'Premium', 'pro', 'business', 'premium', 'pro_plus', 'pro plus'];
 const formatDistance = (distance) => {
   if (distance == null || distance === '' || distance === 'undefined') return '';
   const d = Number(distance);
@@ -57,12 +57,17 @@ const CATEGORY_MAPPING = {
 };
 const GLOBAL_CATEGORIES = Object.keys(CATEGORY_MAPPING);
 
+const getPlanWeight = (plan) => {
+  const p = String(plan || '').toLowerCase();
+  if (p === 'pro_plus' || p === 'pro plus') return 2;
+  if (p === 'pro' || p === 'business' || p === 'premium') return 1;
+  return 0;
+};
 const toKm = (d) => (d == null || d === '' || d === 'undefined') ? 999 : Number(d);
 const byDistance = (a, b) => {
   const da = toKm(a.distance), db = toKm(b.distance);
   if (da !== db) return da - db;
-  const ap = PREMIUM_PLANS.includes(a.plan), bp = PREMIUM_PLANS.includes(b.plan);
-  return ap === bp ? 0 : ap ? -1 : 1;
+  return getPlanWeight(b.plan) - getPlanWeight(a.plan);
 };
 
 function useLocation() {
@@ -241,24 +246,31 @@ function SearchOverlay({ query, shops, range, onClose, onSubmit }) {
                 <div>
                   <div className="dkn-section-pill"><Building2 size={11} /> Shops</div>
                   <div className="dkn-overlay-grid">
-                    {filteredShops.map((shop) => (
-                      <Link key={shop.id} href={`/shop/${shop.id}`} onClick={onClose} className="dkn-mini-card">
-                        {PREMIUM_PLANS.includes(shop.plan) && <span className="dkn-pro-badge"><Award size={9} />PRO</span>}
-                        <div className="dkn-mini-img">
-                           {shop.cover_image || shop.image
-                            ? <img src={normalizeImageUrl(shop.cover_image || shop.image)} alt={shop.name} />
-                            : <span>{CATEGORY_MAPPING[shop.category]?.emoji || '🏪'}</span>}
-                        </div>
-                        <div className="dkn-mini-body">
-                          <p className="dkn-mini-name"><Highlight text={shop.name} query={query} /></p>
-                          <p className="dkn-mini-cat">{shop.category}</p>
-                          <div className="dkn-mini-foot">
-                            {shop.distance != null && <span className="dkn-mini-dist">{formatDistance(shop.distance)}</span>}
-                            {shop.is_open && <span className="dkn-mini-open">Open</span>}
+                    {filteredShops.map((shop) => {
+                      const planNorm = String(shop.plan || '').toLowerCase();
+                      const isProPlus = planNorm === 'pro_plus';
+                      const isPro = planNorm === 'pro';
+                      const displayName = isProPlus ? '✅ ' + shop.name : (isPro ? '⭐ ' + shop.name : shop.name);
+                      return (
+                        <Link key={shop.id} href={`/shop/${shop.id}`} onClick={onClose} className="dkn-mini-card">
+                          {isProPlus && <span className="dkn-pro-plus-badge"><CheckCircle size={9} />VERIFIED</span>}
+                          {isPro && <span className="dkn-pro-badge"><Star size={9} />PRO</span>}
+                          <div className="dkn-mini-img">
+                             {shop.cover_image || shop.image
+                              ? <img src={normalizeImageUrl(shop.cover_image || shop.image)} alt={shop.name} />
+                              : <span>{CATEGORY_MAPPING[shop.category]?.emoji || '🏪'}</span>}
                           </div>
-                        </div>
-                      </Link>
-                    ))}
+                          <div className="dkn-mini-body">
+                            <p className="dkn-mini-name"><Highlight text={displayName} query={query} /></p>
+                            <p className="dkn-mini-cat">{shop.category}</p>
+                            <div className="dkn-mini-foot">
+                              {shop.distance != null && <span className="dkn-mini-dist">{formatDistance(shop.distance)}</span>}
+                              {shop.is_open && <span className="dkn-mini-open">Open</span>}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -883,6 +895,11 @@ export default function HomeDashboard() {
         .dkn-open-pill { position: absolute; bottom: 7px; left: 7px; background: white; border-radius: 50px; padding: 3px 8px; font-family: var(--fbody); font-size: 9px; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
         .dkn-open-dot { width: 5px; height: 5px; border-radius: 50%; background: #22c55e; animation: dknPulse 2.4s ease-in-out infinite; }
         .dkn-pro-badge { position: absolute; top: 7px; right: 7px; z-index: 2; background: var(--gold); color: white; border-radius: 6px; padding: 3px 7px; font-family: var(--fbody); font-size: 8px; font-weight: 700; letter-spacing: 0.06em; display: flex; align-items: center; gap: 3px; }
+        .dkn-pro-plus-badge { position: absolute; top: 7px; right: 7px; z-index: 2; background: #A855F7; color: white; border-radius: 6px; padding: 3px 7px; font-family: var(--fbody); font-size: 8px; font-weight: 700; letter-spacing: 0.06em; display: flex; align-items: center; gap: 3px; }
+        .dkn-shop-card-pro { border: 2.2px solid #2F5D50 !important; }
+        .dkn-shop-card-pro-plus { border: 2.2px solid #A855F7 !important; }
+        .dkn-grid-card-pro { border: 2.2px solid #2F5D50 !important; }
+        .dkn-grid-card-pro-plus { border: 2.2px solid #A855F7 !important; }
         .dkn-card-body { padding: 11px 12px 13px; }
         .dkn-card-name { font-family: var(--fhead); font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
         .dkn-card-cat { font-family: var(--fbody); font-size: 11px; color: var(--ink3); margin-top: 2px; }
@@ -1327,19 +1344,24 @@ export default function HomeDashboard() {
               {hasCoords && !isLoading && openNowShops.length > 0 && (
                 <div className="dkn-hscroll">
                   {openNowShops.slice(0, PAGE_SIZE).map((shop) => {
-                    const isPremium = PREMIUM_PLANS.includes(shop.plan);
+                    const planNorm = String(shop.plan || '').toLowerCase();
+                    const isProPlus = planNorm === 'pro_plus';
+                    const isPro = planNorm === 'pro';
+                    const displayName = isProPlus ? '✅ ' + shop.name : (isPro ? '⭐ ' + shop.name : shop.name);
+                    const cardBorderClass = isProPlus ? 'dkn-shop-card-pro-plus' : isPro ? 'dkn-shop-card-pro' : '';
                     const meta = CATEGORY_MAPPING[shop.category] || CATEGORY_MAPPING.Others;
                     return (
-                      <Link key={`open-${shop.id}`} href={`/shop/${shop.id}`} className="dkn-shop-card">
+                      <Link key={`open-${shop.id}`} href={`/shop/${shop.id}`} className={`dkn-shop-card ${cardBorderClass}`}>
                         <div className="dkn-card-img">
                           {shop.cover_image || shop.image
                             ? <img src={normalizeImageUrl(shop.cover_image || shop.image)} alt={shop.name} />
                             : <span>{meta.emoji}</span>}
                           <div className="dkn-open-pill"><span className="dkn-open-dot" />Open</div>
-                          {isPremium && <span className="dkn-pro-badge"><Award size={8} />PRO</span>}
+                          {isProPlus && <span className="dkn-pro-plus-badge"><CheckCircle size={8} />VERIFIED</span>}
+                          {isPro && <span className="dkn-pro-badge"><Star size={8} />PRO</span>}
                         </div>
                         <div className="dkn-card-body">
-                          <div className="dkn-card-name">{shop.name}</div>
+                          <div className="dkn-card-name">{displayName}</div>
                           <div className="dkn-card-cat">{shop.category}</div>
                           <div className="dkn-card-foot">
                             {shop.distance != null && <span className="dkn-dist-pill">{formatDistance(shop.distance)}</span>}
@@ -1423,13 +1445,22 @@ export default function HomeDashboard() {
                   <>
                     <div className="dkn-grid">
                       {filteredShops.slice(0, shopPage * PAGE_SIZE).map((shop) => {
-                        const isPremium = PREMIUM_PLANS.includes(shop.plan);
+                        const planNorm = String(shop.plan || '').toLowerCase();
+                        const isProPlus = planNorm === 'pro_plus';
+                        const isPro = planNorm === 'pro';
+                        const displayName = isProPlus ? '✅ ' + shop.name : (isPro ? '⭐ ' + shop.name : shop.name);
+                        const cardBorderClass = isProPlus ? 'dkn-grid-card-pro-plus' : isPro ? 'dkn-grid-card-pro' : '';
                         const meta = CATEGORY_MAPPING[shop.category] || CATEGORY_MAPPING.Others;
                         return (
-                          <Link key={shop.id} href={`/shop/${shop.id}`} className="dkn-grid-card">
-                            {isPremium && (
+                          <Link key={shop.id} href={`/shop/${shop.id}`} className={`dkn-grid-card ${cardBorderClass}`}>
+                            {isProPlus && (
+                              <span className="dkn-pro-plus-badge" style={{ position: 'absolute', top: 7, right: 7, zIndex: 2 }}>
+                                <CheckCircle size={8} /> VERIFIED
+                              </span>
+                            )}
+                            {isPro && (
                               <span className="dkn-pro-badge" style={{ position: 'absolute', top: 7, right: 7, zIndex: 2 }}>
-                                <Award size={8} /> PRO
+                                <Star size={8} /> PRO
                               </span>
                             )}
                             <div className="dkn-gc-img">
@@ -1438,7 +1469,7 @@ export default function HomeDashboard() {
                                 : <span>{meta.emoji}</span>}
                             </div>
                             <div className="dkn-gc-body">
-                              <div className="dkn-gc-name">{shop.name}</div>
+                              <div className="dkn-gc-name">{displayName}</div>
                               <div className="dkn-gc-cat">{shop.category}</div>
                               <div className="dkn-gc-foot">
                                 {shop.distance != null && <span className="dkn-gc-dist">{formatDistance(shop.distance)}</span>}

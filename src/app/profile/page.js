@@ -17,7 +17,8 @@ import {
   Check, 
   User, 
   Award,
-  Loader2
+  Loader2,
+  ShoppingBag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SupportCard from '@/components/SupportCard';
@@ -80,6 +81,43 @@ export default function CustomerProfilePage() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [sendingFeedback, setSendingFeedback] = useState(false);
+
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  useEffect(() => {
+    if (profileData) {
+      setName(profileData.name || '');
+      setPhone(profileData.phone || '');
+      setAddress(profileData.address || '');
+    }
+  }, [profileData]);
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await api.post('profile/update/', { name, phone, address });
+      if (res.data.success) {
+        showToast('Profile details updated!', 'success');
+        localStorage.setItem('cust_name', name);
+        localStorage.setItem('cust_phone', phone);
+        setProfileData(prev => ({
+          ...prev,
+          name: name,
+          phone: phone,
+          address: address
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update profile details', 'error');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   // Fetch profile on mount
   const fetchProfile = useCallback(async () => {
@@ -275,6 +313,62 @@ export default function CustomerProfilePage() {
           </div>
         </div>
         
+        {/* DELIVERY DETAILS CARD */}
+        <div className="space-y-2">
+          <h3 className="text-[10px] font-bold text-[#A0BAB4] uppercase tracking-wider ml-1">Delivery & Contact Details</h3>
+          <div className="bg-white border border-[#E4EDE9] rounded-2xl p-5 shadow-xs">
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Your Name</label>
+                <input
+                  type="text"
+                  placeholder="Enter full name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-emerald-600 bg-slate-50 text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Phone Number</label>
+                <input
+                  type="text"
+                  placeholder="Enter mobile number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-emerald-600 bg-slate-50 text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Default Delivery Address</label>
+                <textarea
+                  placeholder="Enter full delivery address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  rows={2}
+                  className="w-full px-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-emerald-600 bg-slate-50 text-slate-800"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingProfile}
+                className="w-full py-2.5 px-4 rounded-xl bg-[#2F5D50] hover:bg-[#3D7A68] text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {savingProfile ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>Save Profile Details</span>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+
         {/* SUPPORT MYDUKAN CARD */}
         <SupportCard platform="web" />
 
@@ -283,6 +377,21 @@ export default function CustomerProfilePage() {
           <h3 className="text-[10px] font-bold text-[#A0BAB4] uppercase tracking-wider ml-1">Account Options</h3>
           <div className="bg-white border border-[#E4EDE9] rounded-2xl overflow-hidden shadow-xs divide-y divide-[#E4EDE9]">
             
+            {/* My Orders link */}
+            <Link 
+              href="/profile/orders"
+              className="flex items-center gap-3.5 px-4.5 py-4 hover:bg-slate-50 transition-colors group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                <ShoppingBag className="w-4.5 h-4.5" />
+              </div>
+              <div className="flex-grow min-w-0">
+                <h4 className="text-xs font-bold text-[#0F1F1B]">My Orders</h4>
+                <p className="text-[10px] text-[#6B8A82] font-medium mt-0.5">Track and view your order history</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#A0BAB4] transition-transform group-hover:translate-x-0.5" />
+            </Link>
+
             {/* Saved Shops / Favorites link */}
             <Link 
               href="/favorites"

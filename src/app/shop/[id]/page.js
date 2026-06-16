@@ -10,7 +10,7 @@ import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { useUserCoordinates } from '@/hooks/useUserCoordinates';
 import {
-  ArrowLeft, Phone, MapPin, Share2, Heart, Smartphone, Zap, Compass, ShoppingBag, ChevronRight, Search, X, Sparkles, AlertCircle, Clock
+  ArrowLeft, Phone, MapPin, Share2, Heart, Smartphone, Zap, Compass, ShoppingBag, ChevronRight, Search, X, Sparkles, AlertCircle, Clock, Star, Coins
 } from 'lucide-react';
 
 
@@ -24,6 +24,13 @@ const normalizeImageUrl = (img) => {
   if (/^https?:\/\//i.test(value)) return value;
   if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
   return `${API_BASE_URL}/${value.replace(/^\/+/, '')}`;
+};
+
+const formatDeliveryCharge = (charge) => {
+  if (!charge) return 'Free';
+  const parsed = parseFloat(charge);
+  if (isNaN(parsed)) return charge;
+  return `₹${charge}`;
 };
 
 const CATEGORY_STYLES = {
@@ -105,7 +112,7 @@ const SkeletonLoader = ({ className = '' }) => (
 );
 
 // Item Modal Component
-const ItemModal = ({ item, visible, onClose, shop }) => {
+const ItemModal = ({ item, visible, onClose, shop, onAddToCart, onOrderNow }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
@@ -254,22 +261,656 @@ const ItemModal = ({ item, visible, onClose, shop }) => {
                   </div>
                 )}
 
-                {/* Footer Action Button */}
-                <div className="pt-4 border-t border-slate-100 flex justify-end">
+                {/* Description */}
+                {item.description ? <p className="text-xs text-slate-600 leading-relaxed max-h-24 overflow-y-auto pr-1">{item.description}</p> : null}
+
+                {/* Footer Action Buttons */}
+                <div className="pt-4 border-t border-slate-100 flex gap-2.5 justify-end">
                   <motion.button
                     onClick={onClose}
-                    className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     Close
                   </motion.button>
+
+                  {shop?.plan && String(shop.plan).toLowerCase() === 'pro_plus' && (
+                    <>
+                      <motion.button
+                        onClick={() => {
+                          if (item.quantity_status === 'out') {
+                            alert('This item is currently out of stock.');
+                            return;
+                          }
+                          onAddToCart && onAddToCart(item);
+                          onClose();
+                        }}
+                        className="flex-1 py-2.5 px-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-purple-200"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>Add to Cart</span>
+                      </motion.button>
+
+                      <motion.button
+                        onClick={() => {
+                          if (item.quantity_status === 'out') {
+                            alert('This item is currently out of stock.');
+                            return;
+                          }
+                          onOrderNow && onOrderNow(item);
+                        }}
+                        className="flex-1 py-2.5 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-emerald-200"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>Order Now</span>
+                      </motion.button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
           </motion.div>
         </motion.div>
       )}
+    </AnimatePresence>
+  );
+};
+
+// Single-item Order Modal for Pro Plan Shops
+const OrderModal = ({ item, visible, onClose, shop }) => {
+  const { showToast } = useToast();
+  const { user } = useAuth();
+  const [custName, setCustName] = useState('');
+  const [custPhone, setCustPhone] = useState('');
+  const [custQty, setCustQty] = useState(1);
+  const [custAddr, setCustAddr] = useState('');
+  const [custNotes, setCustNotes] = useState('');
+  const [custLat, setCustLat] = useState('');
+  const [custLon, setCustLon] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+
+  useEffect(() => {
+    if (visible) {
+      setCustQty(1);
+      setCustAddr('');
+      setCustNotes('');
+      setCustLat('');
+      setCustLon('');
+
+      const fetchProfileDetails = async () => {
+        let nameVal = '';
+        let phoneVal = '';
+        let addrVal = '';
+
+        if (user?.user_id) {
+          try {
+            const res = await api.get(`/user/${user.user_id}/`);
+            if (res.data) {
+              nameVal = res.data.name || '';
+              phoneVal = res.data.phone || '';
+              addrVal = res.data.address || '';
+            }
+          } catch (e) {
+            console.error('Error fetching profile on order modal:', e);
+          }
+        }
+
+        if (typeof window !== 'undefined') {
+          setCustName(nameVal || localStorage.getItem('cust_name') || '');
+          setCustPhone(phoneVal || localStorage.getItem('cust_phone') || '');
+          setCustAddr(addrVal || '');
+        }
+      };
+
+      fetchProfileDetails();
+    }
+  }, [visible, user]);
+
+  if (!item || !visible) return null;
+
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCustLat(position.coords.latitude.toString());
+          setCustLon(position.coords.longitude.toString());
+          showToast('GPS coordinates loaded successfully! 📍', 'success');
+        },
+        (error) => {
+          showToast('Could not fetch location coordinates.', 'warning');
+        }
+      );
+    } else {
+      showToast('Geolocation is not supported by your browser.', 'warning');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!custName.trim()) return showToast('Name is required', 'warning');
+    if (!custPhone.trim()) return showToast('Phone number is required', 'warning');
+    if (shop?.delivery_available && !custAddr.trim()) return showToast('Delivery address is required', 'warning');
+
+    try {
+      setSubmitting(true);
+      const body = {
+        shop_id: shop.id,
+        item_id: item.id,
+        quantity: parseInt(custQty, 10) || 1,
+        customer_name: custName.trim(),
+        customer_phone: custPhone.trim(),
+        delivery_address: custAddr.trim(),
+        notes: custNotes.trim(),
+        customer_latitude: custLat.trim() ? parseFloat(custLat) : null,
+        customer_longitude: custLon.trim() ? parseFloat(custLon) : null,
+        payment_method: 'COD',
+      };
+      
+      await api.post('/orders/', body);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cust_name', custName.trim());
+        localStorage.setItem('cust_phone', custPhone.trim());
+      }
+      showToast('Your order request has been sent to the merchant! 🎉', 'success');
+      onClose();
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to submit order request.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          className="w-[90%] max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 p-6 relative text-slate-800"
+          onClick={(e) => e.stopPropagation()}
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+        >
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+          
+          <h3 className="text-lg font-black text-slate-900 mb-2">Order Details</h3>
+          <p className="text-xs font-bold text-slate-500 mb-4">{item.name} · ₹{item.price}</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4 text-left">
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Your Name *</label>
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={custName}
+                onChange={(e) => setCustName(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-green-600 bg-slate-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Phone Number *</label>
+              <input
+                type="text"
+                placeholder="Enter phone number"
+                value={custPhone}
+                onChange={(e) => setCustPhone(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-green-600 bg-slate-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Quantity</label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCustQty(q => Math.max(1, q - 1))}
+                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold flex items-center justify-center text-sm text-slate-800"
+                >
+                  -
+                </button>
+                <span className="font-extrabold text-sm w-6 text-center">{custQty}</span>
+                <button
+                  type="button"
+                  onClick={() => setCustQty(q => q + 1)}
+                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold flex items-center justify-center text-sm text-slate-800"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {shop?.delivery_available && (
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Delivery Address *</label>
+                <textarea
+                  placeholder="Enter full delivery address"
+                  value={custAddr}
+                  onChange={(e) => setCustAddr(e.target.value)}
+                  rows={2}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-green-600 bg-slate-50"
+                />
+                <div className="mt-1 bg-green-50 border border-green-100 rounded-xl p-2.5 text-[10px] text-green-800 font-semibold">
+                  🚚 Delivery Charge: {formatDeliveryCharge(shop.delivery_charge)} | Areas: {shop.delivery_area || 'All'}
+                  {shop.estimated_delivery_time && ` | Est: ${shop.estimated_delivery_time}`}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Notes (Optional)</label>
+              <textarea
+                placeholder="Any special instructions for the merchant"
+                value={custNotes}
+                onChange={(e) => setCustNotes(e.target.value)}
+                rows={1}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-green-600 bg-slate-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">📍 Share Exact Location (Optional)</label>
+              <button
+                type="button"
+                onClick={handleGetLocation}
+                className="w-full py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Get Current Location</span>
+              </button>
+              <div className="flex gap-2.5 mt-2.5">
+                <input
+                  type="text"
+                  placeholder="Latitude"
+                  value={custLat}
+                  onChange={(e) => setCustLat(e.target.value)}
+                  className="w-1/2 px-4 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:border-green-600 bg-slate-50"
+                />
+                <input
+                  type="text"
+                  placeholder="Longitude"
+                  value={custLon}
+                  onChange={(e) => setCustLon(e.target.value)}
+                  className="w-1/2 px-4 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:border-green-600 bg-slate-50"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Payment Method</label>
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-emerald-250 bg-emerald-50 text-[11px] text-emerald-800 font-bold">
+                <Coins className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  {shop?.payment_policy === 'cod' 
+                    ? 'Cash on Delivery (COD)' 
+                    : shop?.payment_policy === 'contact' 
+                    ? 'Merchant may contact you for payment.' 
+                    : 'Cash on Delivery (COD) or merchant may contact you for payment.'}
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-4 flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-black uppercase tracking-wider transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-green-600 hover:bg-green-700 text-white text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+              >
+                {submitting ? 'Submitting...' : 'Place Order'}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+// Multi-item Cart Modal for Pro Plus Plan Shops
+const CartModal = ({ visible, onClose, cart, setCart, shop }) => {
+  const { showToast } = useToast();
+  const { user } = useAuth();
+  const [custName, setCustName] = useState('');
+  const [custPhone, setCustPhone] = useState('');
+  const [custAddr, setCustAddr] = useState('');
+  const [custNotes, setCustNotes] = useState('');
+  const [custLat, setCustLat] = useState('');
+  const [custLon, setCustLon] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+
+  useEffect(() => {
+    if (visible) {
+      setCustAddr('');
+      setCustNotes('');
+      setCustLat('');
+      setCustLon('');
+
+      const fetchProfileDetails = async () => {
+        let nameVal = '';
+        let phoneVal = '';
+        let addrVal = '';
+
+        if (user?.user_id) {
+          try {
+            const res = await api.get(`/user/${user.user_id}/`);
+            if (res.data) {
+              nameVal = res.data.name || '';
+              phoneVal = res.data.phone || '';
+              addrVal = res.data.address || '';
+            }
+          } catch (e) {
+            console.error('Error fetching profile on cart modal:', e);
+          }
+        }
+
+        if (typeof window !== 'undefined') {
+          setCustName(nameVal || localStorage.getItem('cust_name') || '');
+          setCustPhone(phoneVal || localStorage.getItem('cust_phone') || '');
+          setCustAddr(addrVal || '');
+        }
+      };
+
+      fetchProfileDetails();
+    }
+  }, [visible, user]);
+
+  if (!visible) return null;
+
+  const subtotal = cart.reduce((sum, entry) => sum + (entry.item.price || 0) * entry.quantity, 0);
+
+  const handleUpdateQty = (itemId, change) => {
+    setCart(prev => {
+      return prev.map(entry => {
+        if (entry.item.id === itemId) {
+          const newQty = entry.quantity + change;
+          if (newQty <= 0) return null;
+          return { ...entry, quantity: newQty };
+        }
+        return entry;
+      }).filter(Boolean);
+    });
+  };
+
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCustLat(position.coords.latitude.toString());
+          setCustLon(position.coords.longitude.toString());
+          showToast('GPS coordinates loaded successfully! 📍', 'success');
+        },
+        (error) => {
+          showToast('Could not fetch location coordinates.', 'warning');
+        }
+      );
+    } else {
+      showToast('Geolocation is not supported by your browser.', 'warning');
+    }
+  };
+
+  const handlePlaceOrder = async (e) => {
+    e.preventDefault();
+    if (cart.length === 0) return showToast('Your cart is empty', 'warning');
+    if (!custName.trim()) return showToast('Name is required', 'warning');
+    if (!custPhone.trim()) return showToast('Phone number is required', 'warning');
+    if (shop?.delivery_available && !custAddr.trim()) return showToast('Delivery address is required', 'warning');
+
+    try {
+      setSubmitting(true);
+      let successCount = 0;
+      
+      const promises = cart.map(async (entry) => {
+        const body = {
+          shop_id: shop.id,
+          item_id: entry.item.id,
+          quantity: entry.quantity,
+          customer_name: custName.trim(),
+          customer_phone: custPhone.trim(),
+          delivery_address: custAddr.trim(),
+          notes: custNotes.trim(),
+          customer_latitude: custLat.trim() ? parseFloat(custLat) : null,
+          customer_longitude: custLon.trim() ? parseFloat(custLon) : null,
+          payment_method: 'COD',
+        };
+        try {
+          await api.post('/orders/', body);
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to submit order for item ${entry.item.id}:`, err);
+        }
+      });
+
+      await Promise.all(promises);
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cust_name', custName.trim());
+        localStorage.setItem('cust_phone', custPhone.trim());
+      }
+
+      if (successCount === cart.length) {
+        showToast('All order requests placed successfully! 🎉', 'success');
+        setCart([]);
+        onClose();
+      } else if (successCount > 0) {
+        showToast(`Placed ${successCount} of ${cart.length} orders successfully.`, 'warning');
+        setCart([]);
+        onClose();
+      } else {
+        showToast('Failed to submit order requests.', 'error');
+      }
+    } catch (err) {
+      showToast('Error placing orders.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          className="w-[90%] max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 relative max-h-[90vh] flex flex-col justify-between text-slate-800"
+          onClick={(e) => e.stopPropagation()}
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+        >
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors z-10">
+            <X className="w-5 h-5" />
+          </button>
+          
+          <div className="overflow-y-auto grow pr-1">
+            <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center gap-1.5">
+              <ShoppingBag className="w-5 h-5 text-purple-600" />
+              <span>Shopping Cart</span>
+            </h3>
+
+            {cart.length === 0 ? (
+              <div className="py-12 text-center text-slate-500">
+                <p className="font-extrabold text-sm">Your cart is empty</p>
+                <p className="text-[10px] mt-1">Browse products and add them to your cart.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 mb-6">
+                {cart.map((entry) => (
+                  <div key={entry.item.id} className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={normalizeImageUrl(entry.item.image) || PLACEHOLDER_IMAGE}
+                        alt={entry.item.name}
+                        className="w-12 h-12 rounded-xl object-cover bg-slate-50 shrink-0"
+                      />
+                      <div className="text-left">
+                        <p className="text-xs font-bold text-slate-900 leading-snug line-clamp-1">{entry.item.name}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">₹{entry.item.price}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        onClick={() => handleUpdateQty(entry.item.id, -1)}
+                        className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 font-extrabold flex items-center justify-center text-xs text-slate-800"
+                      >
+                        -
+                      </button>
+                      <span className="font-extrabold text-xs w-4 text-center">{entry.quantity}</span>
+                      <button
+                        onClick={() => handleUpdateQty(entry.item.id, 1)}
+                        className="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 font-extrabold flex items-center justify-center text-xs text-slate-800"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-between items-center pt-2 font-black text-xs text-slate-900">
+                  <span>Subtotal</span>
+                  <span className="text-sm text-green-700">₹{subtotal.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+
+            {cart.length > 0 && (
+              <form onSubmit={handlePlaceOrder} className="space-y-4 text-left border-t border-slate-100 pt-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Your Name *</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your name"
+                    value={custName}
+                    onChange={(e) => setCustName(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-600 bg-slate-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Phone Number *</label>
+                  <input
+                    type="text"
+                    placeholder="Enter phone number"
+                    value={custPhone}
+                    onChange={(e) => setCustPhone(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-600 bg-slate-50"
+                  />
+                </div>
+
+                {shop?.delivery_available && (
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Delivery Address *</label>
+                    <textarea
+                      placeholder="Enter full delivery address"
+                      value={custAddr}
+                      onChange={(e) => setCustAddr(e.target.value)}
+                      rows={2}
+                      className="w-full px-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-600 bg-slate-50"
+                    />
+                    <div className="mt-1 bg-purple-50 border border-purple-100 rounded-xl p-2.5 text-[10px] text-purple-800 font-semibold">
+                      🚚 Delivery Charge: {formatDeliveryCharge(shop.delivery_charge)} | Areas: {shop.delivery_area || 'All'}
+                      {shop.estimated_delivery_time && ` | Est: ${shop.estimated_delivery_time}`}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Notes (Optional)</label>
+                  <textarea
+                    placeholder="Any special instructions for the merchant"
+                    value={custNotes}
+                    onChange={(e) => setCustNotes(e.target.value)}
+                    rows={1}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-600 bg-slate-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">📍 Share Exact Location (Optional)</label>
+                  <button
+                    type="button"
+                    onClick={handleGetLocation}
+                    className="w-full py-1.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <MapPin className="w-3 h-3" />
+                    <span>Get Current Location</span>
+                  </button>
+                  <div className="flex gap-2.5 mt-2.5">
+                    <input
+                      type="text"
+                      placeholder="Latitude"
+                      value={custLat}
+                      onChange={(e) => setCustLat(e.target.value)}
+                      className="w-1/2 px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] focus:outline-none focus:border-purple-600 bg-slate-50"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Longitude"
+                      value={custLon}
+                      onChange={(e) => setCustLon(e.target.value)}
+                      className="w-1/2 px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] focus:outline-none focus:border-purple-600 bg-slate-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Payment Method</label>
+                  <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-purple-200 bg-purple-50 text-[11px] text-purple-800 font-bold">
+                    <Coins className="w-4 h-4 text-purple-600 shrink-0" />
+                    <span>
+                      {shop?.payment_policy === 'cod' 
+                        ? 'Cash on Delivery (COD)' 
+                        : shop?.payment_policy === 'contact' 
+                        ? 'Merchant may contact you for payment.' 
+                        : 'Cash on Delivery (COD) or merchant may contact you for payment.'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-black uppercase tracking-wider transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-md shadow-purple-200"
+                  >
+                    {submitting ? 'Submitting...' : 'Place Order'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
     </AnimatePresence>
   );
 };
@@ -305,6 +946,71 @@ export default function ShopDetailPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [cart, setCart] = useState([]);
+  const [showCartModal, setShowCartModal] = useState(false);
+
+  // Load cart on shop change or storage event
+  useEffect(() => {
+    if (typeof window === 'undefined' || !shop?.id) return;
+    const loadCart = () => {
+      try {
+        const stored = localStorage.getItem('dukan_cart');
+        const globalCart = stored ? JSON.parse(stored) : [];
+        if (Array.isArray(globalCart)) {
+          const entry = globalCart.find(e => e.shop?.id === shop.id);
+          setCart(entry ? entry.items : []);
+        }
+      } catch (e) {
+        console.error('Error loading cart', e);
+      }
+    };
+    loadCart();
+    window.addEventListener('dukan_cart_changed', loadCart);
+    return () => window.removeEventListener('dukan_cart_changed', loadCart);
+  }, [shop?.id]);
+
+  const updateCartAndSave = (updater) => {
+    setCart(prev => {
+      const updated = typeof updater === 'function' ? updater(prev) : updater;
+      try {
+        const stored = localStorage.getItem('dukan_cart');
+        let globalCart = stored ? JSON.parse(stored) : [];
+        if (!Array.isArray(globalCart)) globalCart = [];
+
+        if (updated.length === 0) {
+          globalCart = globalCart.filter(entry => entry.shop?.id !== shop.id);
+        } else {
+          const existingIdx = globalCart.findIndex(entry => entry.shop?.id === shop.id);
+          const shopEntry = {
+            shop: {
+              id: shop.id,
+              name: shop.name,
+              cover_image: shop.cover_image,
+              image: shop.image,
+              delivery_available: shop.delivery_available,
+              delivery_charge: shop.delivery_charge,
+              delivery_area: shop.delivery_area,
+              estimated_delivery_time: shop.estimated_delivery_time,
+              plan: shop.plan
+            },
+            items: updated
+          };
+          if (existingIdx >= 0) {
+            globalCart[existingIdx] = shopEntry;
+          } else {
+            globalCart.push(shopEntry);
+          }
+        }
+        localStorage.setItem('dukan_cart', JSON.stringify(globalCart));
+        window.dispatchEvent(new Event('dukan_cart_changed'));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+  };
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [orderItem, setOrderItem] = useState(null);
   const [offerIdx, setOfferIdx] = useState(0);
   const searchInputRef = useRef(null);
   const favScale = useRef(1);
@@ -333,10 +1039,63 @@ export default function ShopDetailPage() {
 
   const { shop = {}, banners = [], media = [], items = [] } = data;
   const isFavorited = shop?.id ? faves.includes(shop.id) : false;
-  const isPremium = shop.plan === 'pro';
+  const isPremium = shop?.plan && ['pro', 'pro_plus'].includes(shop.plan.toLowerCase());
+  const isProPlus = shop?.plan && String(shop.plan).toLowerCase() === 'pro_plus';
   const galleryImages = Array.isArray(media)
     ? media.map((entry) => normalizeImageUrl(entry?.image || entry?.src || entry?.url)).filter(Boolean)
     : [];
+
+  const [activeTab, setActiveTab] = useState('products');
+  const [reviews, setReviews] = useState([]);
+  const [userRating, setUserRating] = useState(5);
+  const [userReview, setUserReview] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+
+  const fetchReviews = useCallback(async () => {
+    if (!shop?.id) return;
+    try {
+      setReviewsLoading(true);
+      const res = await api.get(`/shop/${shop.id}/ratings/`);
+      setReviews(res.data || []);
+    } catch (err) {
+      console.error('Error fetching reviews:', err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [shop?.id]);
+
+  useEffect(() => {
+    if (shop?.id) {
+      fetchReviews();
+    }
+  }, [shop?.id, fetchReviews]);
+
+  const handleRatingSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      showToast('Please log in to submit a review', 'warning');
+      return;
+    }
+    try {
+      setSubmittingRating(true);
+      await api.post('/shop/rate/', {
+        shop_id: shop.id,
+        rating: userRating,
+        review: userReview
+      });
+      showToast('Review submitted successfully! Thank you.', 'success');
+      setUserReview('');
+      fetchReviews();
+      refetch();
+    } catch (err) {
+      console.error('Failed to submit rating:', err);
+      showToast(err.response?.data?.error || 'Failed to submit review.', 'error');
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
   const [galleryIndex, setGalleryIndex] = useState(0);
 
   useEffect(() => {
@@ -584,6 +1343,25 @@ export default function ShopDetailPage() {
             <Heart className={`w-5 h-5 ${isFavorited ? 'fill-red-500' : ''}`} color={isFavorited ? '#ef4444' : 'white'} />
           </motion.div>
         </motion.button>
+
+        {/* Cart Button - Top Right (Pro Plus Only) */}
+        {isProPlus && (
+          <motion.button 
+            onClick={() => setShowCartModal(true)}
+            className="absolute top-6 right-20 p-2.5 rounded-xl bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition-colors z-20 flex items-center justify-center"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="relative">
+              <ShoppingBag className="w-5 h-5" />
+              {cart.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black rounded-full w-4.5 h-4.5 flex items-center justify-center leading-none">
+                  {cart.reduce((sum, entry) => sum + entry.quantity, 0)}
+                </span>
+              )}
+            </div>
+          </motion.button>
+        )}
       </motion.section>
 
       {/* Shop Info Card - Premium Design */}
@@ -647,6 +1425,12 @@ export default function ShopDetailPage() {
                 <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
                   <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 font-bold text-xs">
                     {shop.category}
+                  </span>
+
+                  {/* Rating Badge */}
+                  <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-black px-3 py-1 rounded-full border border-amber-200">
+                    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                    <span>{shop.average_rating ? Number(shop.average_rating).toFixed(1) : '0.0'} ({shop.total_ratings || 0})</span>
                   </span>
 
                   {/* Status Badge */}
@@ -932,108 +1716,274 @@ export default function ShopDetailPage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                Products
-                <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                  {filteredItems.length || items.length}
-                </span>
-              </h2>
-            </div>
-            <motion.button
-              onClick={() => setShowSearch(!showSearch)}
-              className="p-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {showSearch ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
-            </motion.button>
-          </div>
-
-          {/* Animated Search Input */}
-          <AnimatePresence>
-            {showSearch && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mb-4"
-              >
-                <div className="flex items-center gap-2 px-4 py-3 bg-slate-100 rounded-xl border-2 border-slate-200 focus-within:border-green-500 transition-colors">
-                  <Search className="w-4 h-4 text-slate-400" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1 bg-transparent outline-none text-sm text-slate-900 placeholder-slate-400"
-                  />
-                  {searchQuery && (
-                    <motion.button
-                      onClick={() => setSearchQuery('')}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <X className="w-4 h-4 text-slate-400 hover:text-slate-600" />
-                    </motion.button>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* Tabs Bar */}
+        <div className="flex border-b border-slate-200 mb-8">
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`py-3 px-6 text-sm font-black uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
+              activeTab === 'products'
+                ? 'border-green-600 text-green-700 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Products ({filteredItems.length || items.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('reviews')}
+            className={`py-3 px-6 text-sm font-black uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
+              activeTab === 'reviews'
+                ? 'border-green-600 text-green-700 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Reviews ({reviews.length})
+          </button>
         </div>
 
-        {/* Products Grid */}
-        {filteredItems.length === 0 && !showSearch && items.length === 0 ? (
-          <motion.div 
-            className="text-center py-16 bg-slate-50 border border-slate-200 rounded-3xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-base font-bold text-slate-800">No products available</h3>
-            <p className="text-xs text-slate-500 mt-2">This vendor has not uploaded any products yet</p>
-          </motion.div>
-        ) : filteredItems.length === 0 && showSearch ? (
-          <motion.div 
-            className="text-center py-16 bg-slate-50 border border-slate-200 rounded-3xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-base font-bold text-slate-800">No results found</h3>
-            <p className="text-xs text-slate-500 mt-2">Try searching with different keywords</p>
-          </motion.div>
-        ) : (
-          <motion.div 
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 sm:gap-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ staggerChildren: 0.05 }}
-          >
-            {filteredItems.map((item, idx) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                onClick={() => handleItemClick(item)}
-                className="cursor-pointer"
+        {activeTab === 'products' ? (
+          <>
+            {/* Search Bar */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                    Products
+                    <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                      {filteredItems.length || items.length}
+                    </span>
+                  </h2>
+                </div>
+                <motion.button
+                  onClick={() => setShowSearch(!showSearch)}
+                  className="p-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {showSearch ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+                </motion.button>
+              </div>
+
+              {/* Animated Search Input */}
+              <AnimatePresence>
+                {showSearch && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="mb-4"
+                  >
+                    <div className="flex items-center gap-2 px-4 py-3 bg-slate-100 rounded-xl border-2 border-slate-200 focus-within:border-green-500 transition-colors">
+                      <Search className="w-4 h-4 text-slate-400" />
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Search products..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1 bg-transparent outline-none text-sm text-slate-900 placeholder-slate-400"
+                      />
+                      {searchQuery && (
+                        <motion.button
+                          onClick={() => setSearchQuery('')}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <X className="w-4 h-4 text-slate-400 hover:text-slate-600" />
+                        </motion.button>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Products Grid */}
+            {filteredItems.length === 0 && !showSearch && items.length === 0 ? (
+              <motion.div 
+                className="text-center py-16 bg-slate-50 border border-slate-200 rounded-3xl"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
               >
-                <ProductCard key={item.id} item={item} showShopInfo={false} shopPhone={shop.phone} shopWhatsApp={shop.whatsapp_number} />
+                <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-base font-bold text-slate-800">No products available</h3>
+                <p className="text-xs text-slate-500 mt-2">This vendor has not uploaded any products yet</p>
               </motion.div>
-            ))}
-          </motion.div>
+            ) : filteredItems.length === 0 && showSearch ? (
+              <motion.div 
+                className="text-center py-16 bg-slate-50 border border-slate-200 rounded-3xl"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-base font-bold text-slate-800">No results found</h3>
+                <p className="text-xs text-slate-500 mt-2">Try searching with different keywords</p>
+              </motion.div>
+            ) : (
+              <motion.div 
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 sm:gap-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ staggerChildren: 0.05 }}
+              >
+                {filteredItems.map((item, idx) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    onClick={() => handleItemClick(item)}
+                    className="cursor-pointer"
+                  >
+                    <ProductCard key={item.id} item={item} showShopInfo={false} shopPhone={shop.phone} shopWhatsApp={shop.whatsapp_number} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </>
+        ) : (
+          <div className="space-y-8 text-left max-w-4xl">
+            {/* Submit Review Form */}
+            {user ? (
+              <form onSubmit={handleRatingSubmit} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+                <h3 className="text-base font-black text-slate-900">Write a Review</h3>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Select Rating</label>
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setUserRating(star)}
+                        className="p-1 hover:scale-110 transition-transform cursor-pointer"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            userRating >= star
+                              ? 'fill-amber-500 text-amber-500'
+                              : 'text-slate-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Write your review</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Tell others about your experience with this vendor..."
+                    value={userReview}
+                    onChange={(e) => setUserReview(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-green-500 bg-slate-50"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={submittingRating}
+                  className="px-6 py-2.5 rounded-full bg-green-700 hover:bg-green-800 text-white text-xs font-black uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {submittingRating ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </form>
+            ) : (
+              <div className="bg-slate-50 p-6 rounded-3xl text-center border border-slate-200">
+                <p className="text-sm font-semibold text-slate-600">Please log in to submit a review for this vendor.</p>
+              </div>
+            )}
+
+            {/* Reviews list */}
+            {reviewsLoading ? (
+              <div className="text-center py-8">
+                <span className="text-sm text-slate-500">Loading reviews...</span>
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="bg-slate-50 p-8 rounded-3xl text-center border border-slate-200">
+                <p className="text-sm font-semibold text-slate-500">No reviews yet. Be the first to review this vendor!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <h3 className="text-base font-black text-slate-900">Reviews ({reviews.length})</h3>
+                <div className="grid gap-4">
+                  {reviews.map((rev) => (
+                    <div key={rev.id} className="bg-white p-5 rounded-3xl border border-slate-150 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-extrabold text-sm text-slate-800">{rev.username}</span>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-3.5 h-3.5 ${
+                                  rev.rating >= star ? 'fill-amber-500 text-amber-500' : 'text-slate-200'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          {new Date(rev.created_at).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                      </div>
+                      {rev.review ? (
+                        <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">{rev.review}</p>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">No comments written.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </motion.section>
 
       {/* Item Modal */}
-      <ItemModal item={selectedItem} visible={showItemModal} onClose={closeModal} shop={shop} />
+      <ItemModal
+        item={selectedItem}
+        visible={showItemModal}
+        onClose={closeModal}
+        shop={shop}
+        onAddToCart={(item) => {
+          updateCartAndSave(prev => {
+            const idx = prev.findIndex(i => i.item.id === item.id);
+            if (idx >= 0) {
+              const updated = [...prev];
+              updated[idx].quantity += 1;
+              return updated;
+            } else {
+              return [...prev, { item, quantity: 1 }];
+            }
+          });
+          showToast('Added to cart! 🛒', 'success');
+        }}
+        onOrderNow={(item) => {
+          setOrderItem(item);
+          setShowOrderModal(true);
+        }}
+      />
+
+      {/* Order Modal */}
+      <OrderModal
+        item={orderItem}
+        visible={showOrderModal}
+        onClose={() => setShowOrderModal(false)}
+        shop={shop}
+      />
+
+      {/* Cart Modal */}
+      <CartModal
+        visible={showCartModal}
+        onClose={() => setShowCartModal(false)}
+        cart={cart}
+        setCart={updateCartAndSave}
+        shop={shop}
+      />
     </div>
   );
 }

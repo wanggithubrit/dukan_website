@@ -42,6 +42,12 @@ export default function BottomNav() {
           path: '/search',
         },
         {
+          label: 'Cart',
+          icon: ShoppingBag,
+          path: '/cart',
+          auth: true,
+        },
+        {
           label: 'Favorites',
           icon: Heart,
           path: '/favorites',
